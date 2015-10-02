@@ -24,31 +24,42 @@ bool SimpleLocalPlanner::computeVelocityCommands(Twist &cmd_vel)
 	
 	double latest_pose_age = (Time::now() - latest_pose.header.stamp).toSec();
 	const PoseStamped& current_goal = current_plan.front();
+	
 	double hdg_error = getHeadingError(current_goal, latest_pose);
 	double distance = calcDistance(current_goal, latest_pose);
 	bool close_enough = (distance <= goal_tolerance);
 	ROS_WARN("BTT is: %+f, RTT is: %f", angles::to_degrees(hdg_error), distance);
 	
-	if (abs(hdg_error) > traj_tolerance)
+	if (close_enough)
 	{
-		TWIST_TURN(cmd_vel) = turn_rate * (hdg_error > 0? -1 : +1);
-		if(close_enough) TWIST_FWD(cmd_vel) = 0.0; //stop forward movement
-		return true;
+		//clear the current goal and re-evaluate
+		finishedCurrentGoal();
+		return computeVelocityCommands(cmd_vel);
 	}
 	
-	if (!close_enough)
+	if (abs(hdg_error) <= traj_tolerance)
 	{
-		//check if the latest pose is too far out of date before driving anywhere
-		//if(latest_pose_age > 10.0) return false; 
-		
 		TWIST_FWD(cmd_vel) = fwd_rate; //drive forward
 		TWIST_TURN(cmd_vel) = 0.0;
 		return true;
 	}
 	
-	//clear the current goal and re-evaluate
-	finishedCurrentGoal();
-	return computeVelocityCommands(cmd_vel);
+	if (abs(angles::from_degrees(180) - abs(hdg_error)) <= traj_tolerance)
+	{
+		TWIST_FWD(cmd_vel) = -fwd_rate; //drive reverse
+		TWIST_TURN(cmd_vel) = 0.0;
+		return true;
+	}
+	
+	//Turn to target
+	int turn_dir = hdg_error > 0? -1 : +1;
+	if (abs(hdg_error) > angles::from_degrees(100)) //far enough away we should aim to reverse
+	{
+		turn_dir *= -1;
+	}
+	TWIST_TURN(cmd_vel) = turn_rate * turn_dir;
+	TWIST_FWD(cmd_vel) = 0.0;
+	return true;
 }
 
 void SimpleLocalPlanner::initialize(string, tf::TransformListener*, costmap_2d::Costmap2DROS*)
