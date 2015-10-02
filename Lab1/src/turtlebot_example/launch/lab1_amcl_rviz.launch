@@ -1,0 +1,14 @@
+<launch>
+	<!-- Convenience launch script -->
+	
+	<include file="$(find turtlebot_example)/launch/turtlebot_gazebo.launch" />
+	
+	<include file="$(find turtlebot_example)/launch/amcl_demo.launch">
+		<arg name="map_file" value="/home/mwerezak/Projects/ME597/Lab1/out/lab1part6map.yaml"/>
+	</include>
+	
+	<include file="$(find turtlebot_rviz_launchers)/launch/view_navigation.launch" />
+	
+</launch>
+
+
