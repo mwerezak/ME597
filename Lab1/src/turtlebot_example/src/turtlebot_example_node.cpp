@@ -96,10 +96,15 @@ int main(int argc, char **argv)
 		loop_rate.sleep(); //Maintain the loop rate
 		spinOnce();   //Check for new messages
     
-		if(!motion_planner.computeVelocityCommands(vel_cmd))
+		if(motion_planner.isGoalReached())
 		{
 			TWIST_FWD(vel_cmd) = 0.0; //stop
-			TWIST_TURN(vel_cmd) = 0.2; //apparently spinning in place makes amcl provide updates again
+			TWIST_TURN(vel_cmd) = 0.0;
+		}
+		else if(!motion_planner.computeVelocityCommands(vel_cmd))
+		{
+			TWIST_FWD(vel_cmd) = 0.0; //stop
+			TWIST_TURN(vel_cmd) = 0.2; //apparently spinning in place makes amcl provide updates again?
 		}
 		
 		velocity_publisher.publish(vel_cmd); // Publish the command velocity

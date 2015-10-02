@@ -13,7 +13,7 @@ SimpleLocalPlanner::SimpleLocalPlanner():
 	current_plan()
 { 
 	goal_tolerance = 0.3;
-	traj_tolerance = angles::from_degrees(5.0);
+	traj_tolerance = angles::from_degrees(10.0);
 	fwd_rate = 0.2;
 	turn_rate = 0.2;
 }
@@ -30,34 +30,48 @@ bool SimpleLocalPlanner::computeVelocityCommands(Twist &cmd_vel)
 	bool close_enough = (distance <= goal_tolerance);
 	ROS_WARN("BTT is: %+f, RTT is: %f", angles::to_degrees(hdg_error), distance);
 	
-	if (close_enough)
+	//*** Reached the goal
+	if(close_enough)
 	{
 		//clear the current goal and re-evaluate
 		finishedCurrentGoal();
 		return computeVelocityCommands(cmd_vel);
 	}
 	
-	if (abs(hdg_error) <= traj_tolerance)
+	//** Check for correct bearing to target
+	
+	//proportional control with saturation
+	double prop_fwd_rate = min(distance*(0.5*fwd_rate/goal_tolerance), fwd_rate);
+	if(abs(hdg_error) <= traj_tolerance)
 	{
-		TWIST_FWD(cmd_vel) = fwd_rate; //drive forward
+		TWIST_FWD(cmd_vel) = prop_fwd_rate; //drive forward
 		TWIST_TURN(cmd_vel) = 0.0;
 		return true;
 	}
 	
-	if (abs(angles::from_degrees(180) - abs(hdg_error)) <= traj_tolerance)
+	if(abs(angles::from_degrees(180) - abs(hdg_error)) <= traj_tolerance)
 	{
-		TWIST_FWD(cmd_vel) = -fwd_rate; //drive reverse
+		TWIST_FWD(cmd_vel) = -prop_fwd_rate; //drive reverse
 		TWIST_TURN(cmd_vel) = 0.0;
 		return true;
 	}
 	
-	//Turn to target
-	int turn_dir = hdg_error > 0? -1 : +1;
-	if (abs(hdg_error) > angles::from_degrees(100)) //far enough away we should aim to reverse
+	//*** Not correct bearing, turn to target
+	
+	//far enough away we should aim to reverse
+	if(hdg_error > angles::from_degrees(100))
 	{
-		turn_dir *= -1;
+		hdg_error -= 180;
 	}
-	TWIST_TURN(cmd_vel) = turn_rate * turn_dir;
+	else if(hdg_error < -angles::from_degrees(100))
+	{
+		hdg_error += 180;
+	}
+
+	//proportional control with saturation
+	double prop_turn_rate = min(-hdg_error*(0.5*turn_rate/traj_tolerance), turn_rate);
+	
+	TWIST_TURN(cmd_vel) = prop_turn_rate;
 	TWIST_FWD(cmd_vel) = 0.0;
 	return true;
 }
