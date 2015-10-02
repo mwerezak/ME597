@@ -14,28 +14,31 @@
 #include <geometry_msgs/Twist.h>
 #include <tf/transform_datatypes.h>
 
+
 //Callback function for the Position topic 
 void pose_callback(const geometry_msgs::PoseWithCovarianceStamped& msg)
 {
 	//This function is called when a new pose message is received
 
-	double X = msg.pose.pose.position.x; // Robot X psotition
-	double Y = msg.pose.pose.position.y; // Robot Y psotition
+	double X = msg.pose.pose.position.x; // Robot X position
+	double Y = msg.pose.pose.position.y; // Robot Y position
 	double Yaw = tf::getYaw(msg.pose.pose.orientation); // Robot Yaw
-	ROS_DEBUG("pose_callback X: %f Y: %f Yaw: %f", X, Y, Yaw);
+	ROS_INFO("pose_callback X: %f Y: %f Yaw: %f", X, Y, Yaw);
 }
+
+
 
 int main(int argc, char **argv)
 {
 	//Initialize the ROS framework
 	ros::init(argc,argv,"main_control");
-	ros::NodeHandle node_handle;
+	ros::NodeHandle n;
 
 	//Subscribe to the desired topics and assign callbacks
-	ros::Subscriber pose_sub = node_handle.subscribe("/amcl_pose", 1, pose_callback);
+	ros::Subscriber pose_sub = n.subscribe("/amcl_pose", 1, pose_callback);
 
 	//Setup topics to Publish from this node
-	ros::Publisher velocity_publisher = node_handle.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
+	ros::Publisher velocity_publisher = n.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
     
 	//Velocity control variable
 	geometry_msgs::Twist vel;
