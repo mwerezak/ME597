@@ -69,7 +69,9 @@ bool SimpleLocalPlanner::computeVelocityCommands(Twist &cmd_vel)
 	}
 
 	//proportional control with saturation
-	double prop_turn_rate = min(-hdg_error*(0.5*turn_rate/traj_tolerance), turn_rate);
+	double prop_turn_rate = -hdg_error*(0.5*turn_rate/traj_tolerance);
+	prop_turn_rate = min(prop_turn_rate,  turn_rate); //saturation
+	prop_turn_rate = max(prop_turn_rate, -turn_rate);
 	
 	TWIST_TURN(cmd_vel) = prop_turn_rate;
 	TWIST_FWD(cmd_vel) = 0.0;
@@ -78,12 +80,7 @@ bool SimpleLocalPlanner::computeVelocityCommands(Twist &cmd_vel)
 
 void SimpleLocalPlanner::initialize(string, tf::TransformListener*, costmap_2d::Costmap2DROS*)
 {
-	return; //fuck
-}
-
-void SimpleLocalPlanner::initialize(const PoseStamped& init_pose)
-{
-	latest_pose = init_pose;
+	return; //do nothing
 }
 
 bool SimpleLocalPlanner::isGoalReached()
@@ -93,7 +90,7 @@ bool SimpleLocalPlanner::isGoalReached()
 
 void SimpleLocalPlanner::updateLatestPose(const PoseWithCovarianceStamped& latest)
 {
-	latest_pose.pose = latest.pose.pose; //ROS is strange sometimes...
+	latest_pose.pose = latest.pose.pose; //ROS can be strange
 }
 
 bool SimpleLocalPlanner::setPlan (const vector<PoseStamped> &plan)

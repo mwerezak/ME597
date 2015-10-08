@@ -40,7 +40,6 @@ class SimpleLocalPlanner : nav_core::BaseLocalPlanner
 		
 		//BaseLocalPlanner methods
 		virtual bool computeVelocityCommands(Twist &cmd_vel);
-		virtual void initialize(const PoseStamped& init_pose);
 		virtual void initialize(string, tf::TransformListener*, costmap_2d::Costmap2DROS*);
 		virtual bool isGoalReached();
 		virtual bool setPlan (const vector<PoseStamped> &plan);

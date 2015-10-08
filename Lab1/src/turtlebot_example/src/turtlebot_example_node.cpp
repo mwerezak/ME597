@@ -48,7 +48,7 @@ void create_square_plan(vector<PoseStamped>& plan, double sidelen)
 {
 	PoseStamped pose;
 	
-	init2DNavPose(pose, sidelen, 0.0, 0.0);
+	init2DNavPose(pose, -sidelen, 0.0, 0.0);
 	plan.push_back(pose);
 	
 	init2DNavPose(pose, sidelen, sidelen, 0.0);
@@ -76,7 +76,12 @@ int main(int argc, char **argv)
 	//Initialize the motion planner
 	PoseStamped init_pose;
 	init2DNavPose(init_pose, 0.0, 0.0, 0.0);
-	motion_planner.initialize(init_pose);
+	
+	PoseWithCovarianceStamped init_update;
+	init_update.header = init_pose.header;
+	init_update.pose.pose = init_pose.pose;
+	
+	motion_planner.updateLatestPose(init_update);
 	
 	vector<PoseStamped> square_plan;
 	create_square_plan(square_plan, 2.0);
