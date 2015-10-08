@@ -1,6 +1,7 @@
 <launch>
 	<!-- Testing Launch script so I don't have to manually restart all these pieces a million times -->
 	
+	<!--
 	<include file="$(find turtlebot_example)/launch/turtlebot_gazebo.launch" />
 	
 	<include file="$(find turtlebot_example)/launch/amcl_demo.launch">
@@ -10,9 +11,14 @@
 	</include>
 	
 	<include file="$(find turtlebot_rviz_launchers)/launch/view_navigation.launch" />
+	-->
+	
+	<!-- make sure to start roscore first -->
+	<include file="$(find turtlebot_bringup)/launch/minimal.launch"/>
+	
+	<node pkg="turtlebotPosClient" type="turtlebotPosClient_node" name="turtlebotPosClient_node" />
 	
 	<node pkg="turtlebot_example" type="turtlebot_example_node" name="turtlebot_example_node" output="screen" />
-	
 
 </launch>
 
