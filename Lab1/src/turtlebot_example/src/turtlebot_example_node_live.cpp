@@ -24,7 +24,7 @@ using namespace ros;
 using namespace geometry_msgs;
 
 
-bool has_init = false;
+bool has_init = false; //wait until after we've recieved our first position update before computing commands
 SimpleLocalPlanner motion_planner;
 
 void create_square_plan(vector<PoseStamped>& plan, double initx, double inity, double sidelen)
@@ -44,20 +44,6 @@ void create_square_plan(vector<PoseStamped>& plan, double initx, double inity, d
 	plan.push_back(pose);
 }
 
-void init_motion_planner(const Pose& starting_pose)
-{
-	PoseStamped init_pose;
-	init2DNavPose(init_pose, starting_pose.position.x, starting_pose.position.y, tf::getYaw(starting_pose.orientation));
-	motion_planner.initialize(init_pose);
-	
-	vector<PoseStamped> square_plan;
-	create_square_plan(square_plan, starting_pose.position.x, starting_pose.position.y, 2.0);
-	
-	motion_planner.setPlan(square_plan);
-
-	has_init = true;
-}
-
 //Callback function for the Position topic 
 void pose_update_callback(const PoseWithCovarianceStamped& msg)
 {
@@ -67,13 +53,13 @@ void pose_update_callback(const PoseWithCovarianceStamped& msg)
 	double Y = POSEST_Y(msg.pose); // Robot Y position
 	double Yaw = tf::getYaw(POSEST_O(msg.pose)); // Robot Yaw
 	
-	if(has_init)
+	motion_planner.updateLatestPose(msg);
+	if(!has_init)
 	{
-		motion_planner.updateLatestPose(msg);
-	}
-	else
-	{
-		init_motion_planner(msg.pose.pose);	
+		vector<PoseStamped> square_plan;
+		create_square_plan(square_plan, X, Y, 2.0);
+		motion_planner.setPlan(square_plan);
+		has_init = true;
 	}
 
 	ROS_WARN
@@ -98,11 +84,8 @@ int main(int argc, char **argv)
 	
 	//Initialize the motion planner
 	
-	
 	//Velocity control variable
 	Twist vel_cmd;
-	//vel_cmd.linear.x = 0.2;
-	//vel_cmd.angular.z = 0.2;
 	
 	//Set the loop rate
 	Rate loop_rate(20);    //20Hz update rate
@@ -111,18 +94,11 @@ int main(int argc, char **argv)
 	{
 		loop_rate.sleep(); //Maintain the loop rate
 		spinOnce();   //Check for new messages
-    		
-		if(!has_init) continue;
-
-		if(motion_planner.isGoalReached())
+		
+		if(!has_init || motion_planner.isGoalReached() || !motion_planner.computeVelocityCommands(vel_cmd))
 		{
 			TWIST_FWD(vel_cmd) = 0.0; //stop
 			TWIST_TURN(vel_cmd) = 0.0;
-		}
-		else if(!motion_planner.computeVelocityCommands(vel_cmd))
-		{
-			TWIST_FWD(vel_cmd) = 0.0; //stop
-			TWIST_TURN(vel_cmd) = 0.2; //apparently spinning in place makes amcl provide updates again?
 		}
 		
 		velocity_publisher.publish(vel_cmd); // Publish the command velocity

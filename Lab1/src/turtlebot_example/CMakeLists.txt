@@ -105,8 +105,9 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(turtlebot_example
+# add_library(SimpleLocalPlanner
 #   src/${PROJECT_NAME}/turtlebot_example.cpp
+#  src/SimpleLocalPlanner.cpp
 # )
 
 ## Declare a cpp executable
@@ -114,16 +115,29 @@ include_directories(
   src/turtlebot_example_node.cpp
   src/SimpleLocalPlanner.cpp
  )
+ 
+ target_link_libraries(turtlebot_example_node
+   ##${PCL_LIBRARIES}
+   ${catkin_LIBRARIES}
+ )
+ 
+ add_executable(turtlebot_example_node_live 
+  src/turtlebot_example_node_live.cpp
+  src/SimpleLocalPlanner.cpp
+ )
+
+ target_link_libraries(turtlebot_example_node_live
+   ${catkin_LIBRARIES}
+ )
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(turtlebot_example_node turtlebot_example_generate_messages_cpp)
 
-## Specify libraries to link a library or executable target against
- target_link_libraries(turtlebot_example_node
-   ##${PCL_LIBRARIES}
-   ${catkin_LIBRARIES}
- )
+
+
+
+
 
 #############
 ## Install ##
