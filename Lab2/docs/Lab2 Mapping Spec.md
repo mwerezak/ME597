@@ -15,7 +15,7 @@ class GridRayTrace
 {
 	public:
 		//Constructor
-		GridRayTrace(??? start, ??? end, geometry_msgs::Pose map_origin);
+		GridRayTrace(int x0, int y0, int x0, y0, geometry_msgs::Pose map_origin);
 		
 		//Writes the next i,j pair to the given pointers.
 		//Returns true if there is another i,j pair after this one, false if the ray trace is done.
