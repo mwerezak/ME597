@@ -5,37 +5,36 @@ inline short sgn(int x) { return x >= 0 ? 1 : -1; }
 
 void bresenham(int x0, int y0, int x1, int y1, std::vector<int>& x, std::vector<int>& y) 
 {
+	int dx = abs(x1 - x0);
+	int dy = abs(y1 - y0);
+	int dx2 = x1 - x0;
+	int dy2 = y1 - y0;
 
-    int dx = abs(x1 - x0);
-    int dy = abs(y1 - y0);
-    int dx2 = x1 - x0;
-    int dy2 = y1 - y0;
-    
-    const bool s = abs(dy) > abs(dx);
+	const bool s = abs(dy) > abs(dx);
 
-    if (s) {
-        int dx2 = dx;
-        dx = dy;
-        dy = dx2;
-    }
+	if (s) {
+		int dx2 = dx;
+		dx = dy;
+		dy = dx2;
+	}
 
-    int inc1 = 2 * dy;
-    int d = inc1 - dx;
-    int inc2 = d - dx;
+	int inc1 = 2 * dy;
+	int d = inc1 - dx;
+	int inc2 = d - dx;
 
-    x.push_back(x0);
-    y.push_back(y0);
+	x.push_back(x0);
+	y.push_back(y0);
 
-    while (x0 != x1 || y0 != y1) {
-        if (s) y0+=sgn(dy2); else x0+=sgn(dx2);
-        if (d < 0) d += inc1;
-        else {
-            d += inc2;
-            if (s) x0+=sgn(dx2); else y0+=sgn(dy2);
-        }
+	while (x0 != x1 || y0 != y1) {
+		if (s) y0+=sgn(dy2); else x0+=sgn(dx2);
+		if (d < 0) d += inc1;
+		else {
+			d += inc2;
+			if (s) x0+=sgn(dx2); else y0+=sgn(dy2);
+		}
 
-        //Add point to vector
-        x.push_back(x0);
-        y.push_back(y0);
-    }
+		//Add point to vector
+		x.push_back(x0);
+		y.push_back(y0);
+	}
 }
