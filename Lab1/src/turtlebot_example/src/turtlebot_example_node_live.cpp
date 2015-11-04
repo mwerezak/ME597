@@ -23,7 +23,26 @@ using namespace std;
 using namespace ros;
 using namespace geometry_msgs;
 
+
+bool has_init = false; //wait until after we've recieved our first position update before computing commands
 SimpleLocalPlanner motion_planner;
+
+void create_square_plan(vector<PoseStamped>& plan, double initx, double inity, double sidelen)
+{
+	PoseStamped pose;
+	
+	init2DNavPose(pose, sidelen + initx, 0.0 + inity, 0.0);
+	plan.push_back(pose);
+	
+	init2DNavPose(pose, sidelen + initx, sidelen + inity, 0.0);
+	plan.push_back(pose);
+	
+	init2DNavPose(pose, 0.0 + initx, sidelen + inity, 0.0);
+	plan.push_back(pose);
+	
+	init2DNavPose(pose, 0.0 + initx, 0.0 + inity, 0.0);
+	plan.push_back(pose);
+}
 
 //Callback function for the Position topic 
 void pose_update_callback(const PoseWithCovarianceStamped& msg)
@@ -35,30 +54,22 @@ void pose_update_callback(const PoseWithCovarianceStamped& msg)
 	double Yaw = tf::getYaw(POSEST_O(msg.pose)); // Robot Yaw
 	
 	motion_planner.updateLatestPose(msg);
-	
+	if(!has_init)
+	{
+		vector<PoseStamped> square_plan;
+		create_square_plan(square_plan, X, Y, 0.75);
+		motion_planner.setPlan(square_plan);
+		has_init = true;
+	}
+
+	/*
 	ROS_WARN
 		(
 			"pose_callback X: %f Y: %f Yaw: %fdeg TS: %0.4f", 
 			X, Y, angles::to_degrees(angles::normalize_angle_positive(Yaw)), 
 			msg.header.stamp.toSec()
 		);
-}
-
-void create_square_plan(vector<PoseStamped>& plan, double sidelen)
-{
-	PoseStamped pose;
-	
-	init2DNavPose(pose, -sidelen, 0.0, 0.0);
-	plan.push_back(pose);
-	
-	init2DNavPose(pose, sidelen, sidelen, 0.0);
-	plan.push_back(pose);
-	
-	init2DNavPose(pose, 0.0, sidelen, 0.0);
-	plan.push_back(pose);
-	
-	init2DNavPose(pose, 0.0, 0.0, 0.0);
-	plan.push_back(pose);
+	*/
 }
 
 int main(int argc, char **argv)
@@ -68,30 +79,18 @@ int main(int argc, char **argv)
 	NodeHandle node_handle;
 
 	//Subscribe to the desired topics and assign callbacks
-	Subscriber pose_sub = node_handle.subscribe("/amcl_pose", 1, pose_update_callback);
+	Subscriber pose_sub = node_handle.subscribe("/indoor_pos", 1, pose_update_callback);
 
 	//Setup topics to Publish from this node
 	Publisher velocity_publisher = node_handle.advertise<Twist>("/cmd_vel_mux/input/navi", 1);
 	
 	//Initialize the motion planner
-	PoseStamped init_pose;
-	init2DNavPose(init_pose, 0.0, 0.0, 0.0);
-	
-	PoseWithCovarianceStamped init_update;
-	init_update.header = init_pose.header;
-	init_update.pose.pose = init_pose.pose;
-	
-	motion_planner.updateLatestPose(init_update);
-	
-	vector<PoseStamped> square_plan;
-	create_square_plan(square_plan, 2.0);
-	
-	motion_planner.setPlan(square_plan);
+	motion_planner.turn_rate = 0.2;
+	motion_planner.traj_tolerance = angles::from_degrees(10.0);
+	motion_planner.goal_tolerance = 0.15;
 	
 	//Velocity control variable
 	Twist vel_cmd;
-	//vel_cmd.linear.x = 0.2;
-	//vel_cmd.angular.z = 0.2;
 	
 	//Set the loop rate
 	Rate loop_rate(20);    //20Hz update rate
@@ -100,20 +99,17 @@ int main(int argc, char **argv)
 	{
 		loop_rate.sleep(); //Maintain the loop rate
 		spinOnce();   //Check for new messages
-    
-		if(motion_planner.isGoalReached())
+		
+		if(!has_init || motion_planner.isGoalReached() || !motion_planner.computeVelocityCommands(vel_cmd))
 		{
 			TWIST_FWD(vel_cmd) = 0.0; //stop
 			TWIST_TURN(vel_cmd) = 0.0;
 		}
-		else if(!motion_planner.computeVelocityCommands(vel_cmd))
-		{
-			TWIST_FWD(vel_cmd) = 0.0; //stop
-			TWIST_TURN(vel_cmd) = 0.2; //apparently spinning in place makes amcl provide updates again?
-		}
 		
 		velocity_publisher.publish(vel_cmd); // Publish the command velocity
 		ROS_ERROR("Main - Velocity commands: v - %f, w - %f", vel_cmd.linear.x, vel_cmd.angular.z);
+		
+		
  
 	}
 

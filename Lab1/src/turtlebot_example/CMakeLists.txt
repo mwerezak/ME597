@@ -11,11 +11,14 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
+  angles
+  nav_core
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
+# find_package( PCL REQUIRED )
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -98,24 +101,43 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ##${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-# add_library(turtlebot_example
+# add_library(SimpleLocalPlanner
 #   src/${PROJECT_NAME}/turtlebot_example.cpp
+#  src/SimpleLocalPlanner.cpp
 # )
 
 ## Declare a cpp executable
- add_executable(turtlebot_example_node src/turtlebot_example_node.cpp)
+ add_executable(turtlebot_example_node 
+  src/turtlebot_example_node.cpp
+  src/SimpleLocalPlanner.cpp
+ )
+ 
+ target_link_libraries(turtlebot_example_node
+   ##${PCL_LIBRARIES}
+   ${catkin_LIBRARIES}
+ )
+ 
+ add_executable(turtlebot_example_node_live 
+  src/turtlebot_example_node_live.cpp
+  src/SimpleLocalPlanner.cpp
+ )
+
+ target_link_libraries(turtlebot_example_node_live
+   ${catkin_LIBRARIES}
+ )
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(turtlebot_example_node turtlebot_example_generate_messages_cpp)
 
-## Specify libraries to link a library or executable target against
- target_link_libraries(turtlebot_example_node
-   ${catkin_LIBRARIES}
- )
+
+
+
+
 
 #############
 ## Install ##
