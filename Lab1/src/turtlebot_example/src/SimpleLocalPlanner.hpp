@@ -23,6 +23,7 @@ class SimpleLocalPlanner : nav_core::BaseLocalPlanner
 	private:
 		list<PoseStamped> current_plan;
 		PoseStamped latest_pose;
+		bool go_forward;
 		
 		double calcDistance(const PoseStamped& pose_a, const PoseStamped& pose_b);
 		double getHeadingError(const PoseStamped& goalpose, const PoseStamped& curpose);

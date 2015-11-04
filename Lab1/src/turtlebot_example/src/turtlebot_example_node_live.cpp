@@ -57,17 +57,19 @@ void pose_update_callback(const PoseWithCovarianceStamped& msg)
 	if(!has_init)
 	{
 		vector<PoseStamped> square_plan;
-		create_square_plan(square_plan, X, Y, 2.0);
+		create_square_plan(square_plan, X, Y, 0.75);
 		motion_planner.setPlan(square_plan);
 		has_init = true;
 	}
 
+	/*
 	ROS_WARN
 		(
 			"pose_callback X: %f Y: %f Yaw: %fdeg TS: %0.4f", 
 			X, Y, angles::to_degrees(angles::normalize_angle_positive(Yaw)), 
 			msg.header.stamp.toSec()
 		);
+	*/
 }
 
 int main(int argc, char **argv)
@@ -83,6 +85,9 @@ int main(int argc, char **argv)
 	Publisher velocity_publisher = node_handle.advertise<Twist>("/cmd_vel_mux/input/navi", 1);
 	
 	//Initialize the motion planner
+	motion_planner.turn_rate = 0.2;
+	motion_planner.traj_tolerance = angles::from_degrees(10.0);
+	motion_planner.goal_tolerance = 0.15;
 	
 	//Velocity control variable
 	Twist vel_cmd;
@@ -103,6 +108,8 @@ int main(int argc, char **argv)
 		
 		velocity_publisher.publish(vel_cmd); // Publish the command velocity
 		ROS_ERROR("Main - Velocity commands: v - %f, w - %f", vel_cmd.linear.x, vel_cmd.angular.z);
+		
+		
  
 	}
 
