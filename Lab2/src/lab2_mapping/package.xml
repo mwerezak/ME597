@@ -8,6 +8,7 @@
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
   <maintainer email="mwerezak@todo.todo">mwerezak</maintainer>
+  <maintainer email="smocny@todo.todo">smocny</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
@@ -42,6 +43,11 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>angles</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>std_msgs</run_depend>
 

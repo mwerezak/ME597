@@ -7,6 +7,11 @@ project(lab2_mapping)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  geometry_msgs
+  sensor_msgs
+  std_msgs
+  tf
+  angles
 )
 
 ## System dependencies are found with CMake's conventions
@@ -127,16 +132,21 @@ include_directories(
 # add_dependencies(lab2_mapping ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(lab2_mapping_node src/lab2_mapping_node.cpp)
+ add_executable(lab2_mapping_node 
+   src/node_main.cpp
+   src/ray_tracing.cpp
+ )
+ 
+## Specify libraries to link a library or executable target against
+ target_link_libraries(lab2_mapping_node
+   ${catkin_LIBRARIES}
+ )
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(lab2_mapping_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-## Specify libraries to link a library or executable target against
-# target_link_libraries(lab2_mapping_node
-#   ${catkin_LIBRARIES}
-# )
+
 
 #############
 ## Install ##
