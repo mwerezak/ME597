@@ -38,3 +38,41 @@ void bresenham(int x0, int y0, int x1, int y1, std::vector<int>& x, std::vector<
 		y.push_back(y0);
 	}
 }
+
+/*
+	GridRayTrace Impl
+*/
+
+GridRayTrace::GridRayTrace
+	(
+		double x0, double y0, 
+		double x1, double y1 
+		//const OccupancyGrid& grid_ref
+	)	
+	: _x_store(), _y_store()
+{
+	//Transform (x,y) into map frame
+	
+	
+	//overestimates the amount of memory we need, but guaranteed to avoid reallocations
+	_x_store.reserve(ceil(abs(x1 - x0)));
+	_y_store.reserve(ceil(abs(y1 - y0)));
+	
+	bresenham(x0, y0, x1, y1, _x_store, _y_store);
+	_cur_idx = 0;
+	_max_idx = std::min(_x_store.size(), _y_store.size());
+}
+
+//Writes the next i,j pair to the given pointers.
+//Returns true if there is another i,j pair after this one, false if the ray trace is done.
+bool GridRayTrace::getNextPoint(int& i, int& j)
+{
+	if(_cur_idx >= _max_idx)
+		return false;
+	
+	i = _x_store[_cur_idx];
+	j = _y_store[_cur_idx];
+	_cur_idx++;
+	
+	return true;
+}
