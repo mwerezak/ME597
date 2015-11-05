@@ -1,28 +1,26 @@
 #include "occupancy_grid.h"
 
-/*
-OccupancyGrid::OccupancyGrid():
-	_width(0), 
-	_height(0) 
-{ }
-*/
-
 OccupancyGrid::OccupancyGrid(int w, int h, tfScalar cell_size, tf::Transform& origin):
 	_width(w), 
 	_height(h), 
 	_grid_scale(cell_size), 
-	_grid_store(w*h, 0.0),
-	_grid_origin(origin)
+	_grid_store(w*h, 0.0)
 {
-	_grid_origin_inv = _grid_origin.inverse();
+	_to_grid_frame = origin.inverse();
 }
 
 int OccupancyGrid::getWidth() const { return _width; }
 int OccupancyGrid::getHeight() const { return _height; }
-
-const tf::Transform& OccupancyGrid::fromGridFrame() const { return _grid_origin; }
-const tf::Transform& OccupancyGrid::toGridFrame() const { return _grid_origin_inv; }
 tfScalar OccupancyGrid::getScale() const { return _grid_scale; }
+
+tf::Vector3 OccupancyGrid::toGridFrame(const tf::Vector3& vect) const
+{
+	tf::Vector3 result = _to_grid_frame(vect);
+	result /= _grid_scale;
+	
+	return result;
+}
+
 
 logit_val OccupancyGrid::readValue(int i, int j) const 
 {

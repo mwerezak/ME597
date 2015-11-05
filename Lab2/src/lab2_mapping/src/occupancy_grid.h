@@ -27,19 +27,16 @@ class OccupancyGrid
 		int _width, _height;
 		std::vector<logit_val> _grid_store;
 		
-		tf::Transform _grid_origin, _grid_origin_inv;
+		tf::Transform _to_grid_frame;
 		tfScalar _grid_scale;
 	
 	public:
-		//OccupancyGrid();
 		OccupancyGrid(int w, int h, tfScalar cell_size, tf::Transform& origin);
 		int getWidth() const;
 		int getHeight() const;
+		tfScalar getScale() const; //The real-world width and height of each grid cell	
 		
-		//Gets the transform representing the frame of the occupancy grid wrt the world.
-		const tf::Transform& fromGridFrame() const;
-		const tf::Transform& toGridFrame() const;
-		tfScalar getScale() const; //The real-world width and height of each grid cell
+		tf::Vector3 toGridFrame(const tf::Vector3& vect) const;
 		
 		logit_val readValue(int i, int j) const;
 		logit_val& valueAt(int i, int j);

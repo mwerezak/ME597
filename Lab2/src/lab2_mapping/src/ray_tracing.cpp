@@ -47,14 +47,6 @@ void bresenham(int x0, int y0, int x1, int y1, std::vector<int>& x, std::vector<
 	}
 }
 
-tf::Vector3 scaledTransform(const tf::Vector3& vect, const tf::Transform& transform, tfScalar scale)
-{
-	tf::Vector3 result = transform(vect);
-	result /= scale;
-	
-	return result;
-}
-
 /*
 	GridRayTrace Impl
 */
@@ -63,8 +55,8 @@ GridRayTrace::GridRayTrace(tf::Vector3 start, tf::Vector3 end, const OccupancyGr
 	: _x_store(), _y_store()
 {
 	//Transform (x,y) into map frame
-	start = scaledTransform(start, grid_ref.toGridFrame(), grid_ref.getScale());
-	end = scaledTransform(end, grid_ref.toGridFrame(), grid_ref.getScale());
+	start = grid_ref.toGridFrame(start);
+	end = grid_ref.toGridFrame(end);
 	
 	double x0 = start.getX(), y0 = start.getY();
 	double x1 = end.getX(), y1 = end.getY();
