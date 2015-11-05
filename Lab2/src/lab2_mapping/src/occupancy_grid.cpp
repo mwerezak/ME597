@@ -1,5 +1,17 @@
 #include "occupancy_grid.h"
 
+#include <math.h>
+
+logit_val logit(prob_val p)
+{
+	return log(p/(1-p));
+}
+
+prob_val probability(logit_val logit)
+{
+	return exp(logit)/(1+exp(logit));
+}
+
 OccupancyGrid::OccupancyGrid(int w, int h, tfScalar cell_size, tf::Transform& origin):
 	_width(w), 
 	_height(h), 
