@@ -136,6 +136,7 @@ include_directories(
    src/node_main.cpp
    src/ray_tracing.cpp
    src/occupancy_grid.cpp
+   src/laser_scan.cpp
  )
  
 ## Specify libraries to link a library or executable target against
@@ -147,6 +148,7 @@ include_directories(
    src/tests_main.cpp
    src/ray_tracing.cpp
    src/occupancy_grid.cpp
+   src/laser_scan.cpp
  )
  
 ## Specify libraries to link a library or executable target against
