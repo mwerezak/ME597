@@ -7,14 +7,6 @@
 #include <tf/LinearMath/Transform.h>
 #include "occupancy_grid.h"
 
-//Bresenham line algorithm (pass empty vectors)
-// Usage: (x0, y0) is the first point and (x1, y1) is the second point. The calculated
-//        points (x, y) are stored in the x and y vector. x and y should be empty 
-//	  vectors of integers and shold be defined where this function is called from.
-void bresenham(int x0, int y0, int x1, int y1, std::vector<int>& x, std::vector<int>& y); //copied from example code
-
-tf::Vector3 scaledTransform(tf::Vector3 vect, tf::Transform basis, tfScalar scale);
-
 class GridRayTrace
 {
 	private:

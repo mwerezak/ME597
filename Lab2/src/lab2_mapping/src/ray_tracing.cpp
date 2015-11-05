@@ -3,6 +3,10 @@
 //copied from the example on LEARN
 inline short sgn(int x) { return x >= 0 ? 1 : -1; }
 
+//Bresenham line algorithm (pass empty vectors)
+// Usage: (x0, y0) is the first point and (x1, y1) is the second point. The calculated
+//        points (x, y) are stored in the x and y vector. x and y should be empty 
+//	  vectors of integers and shold be defined where this function is called from.
 void bresenham(int x0, int y0, int x1, int y1, std::vector<int>& x, std::vector<int>& y) 
 {
 	int dx = abs(x1 - x0);
@@ -40,13 +44,11 @@ void bresenham(int x0, int y0, int x1, int y1, std::vector<int>& x, std::vector<
 }
 
 //Takes vect and converts it into the frame defined by basis and scale.
-tf::Vector3 scaledTransform(tf::Vector3 vect, tf::Transform basis, tfScalar scale)
+tf::Vector3 scaledTransform(const tf::Vector3& vect, const tf::Transform& transform, tfScalar scale)
 {
-	tf::Vector3 result;
-	
-	result = vect - basis.getOrigin(); //shift to origin
-	result = tf::quatRotate(basis.getRotation(), result);
-	result *= scale;
+	tf::Vector3 result = tf::quatRotate(transform.getRotation(), vect);
+	result += transform.getOrigin();
+	result /= scale;
 	
 	return result;
 }
@@ -62,14 +64,24 @@ GridRayTrace::GridRayTrace(tf::Vector3 start, tf::Vector3 end, const OccupancyGr
 	start = scaledTransform(start, grid_ref.toGridFrame(), grid_ref.getScale());
 	end = scaledTransform(end, grid_ref.toGridFrame(), grid_ref.getScale());
 	
-	int x0 = start.getX(), y0 = start.getY();
-	int x1 = end.getX(), y1 = end.getY();
+	double x0 = start.getX(), y0 = start.getY();
+	double x1 = end.getX(), y1 = end.getY();
 	
 	//overestimates the amount of memory we need, but guaranteed to avoid reallocations
 	_x_store.reserve(ceil(abs(x1 - x0)));
 	_y_store.reserve(ceil(abs(y1 - y0)));
 	
-	bresenham(x0, y0, x1, y1, _x_store, _y_store);
+	ROS_WARN("floor(-0.2) = %f", floor(-0.2));
+	ROS_WARN("(x0, y0) -> (%f, %f)", x0, y0);
+	ROS_WARN("(x1, y1) -> (%f, %f)", x1, y1);
+	
+	bresenham
+		(
+			floor(x0), floor(y0), 
+			floor(x1), floor(y1), 
+			_x_store, _y_store
+		);
+	
 	_cur_idx = 0;
 	_max_idx = std::min(_x_store.size(), _y_store.size());
 }
