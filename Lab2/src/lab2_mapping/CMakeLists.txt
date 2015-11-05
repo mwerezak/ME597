@@ -135,10 +135,22 @@ include_directories(
  add_executable(lab2_mapping_node 
    src/node_main.cpp
    src/ray_tracing.cpp
+   src/occupancy_grid.cpp
  )
  
 ## Specify libraries to link a library or executable target against
  target_link_libraries(lab2_mapping_node
+   ${catkin_LIBRARIES}
+ )
+ ## Declare a C++ executable
+ add_executable(lab2_tests
+   src/tests_main.cpp
+   src/ray_tracing.cpp
+   src/occupancy_grid.cpp
+ )
+ 
+## Specify libraries to link a library or executable target against
+ target_link_libraries(lab2_tests
    ${catkin_LIBRARIES}
  )
 

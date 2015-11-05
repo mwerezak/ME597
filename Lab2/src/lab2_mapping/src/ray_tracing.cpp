@@ -39,20 +39,31 @@ void bresenham(int x0, int y0, int x1, int y1, std::vector<int>& x, std::vector<
 	}
 }
 
+//Takes vect and converts it into the frame defined by basis and scale.
+tf::Vector3 scaledTransform(tf::Vector3 vect, tf::Transform basis, tfScalar scale)
+{
+	tf::Vector3 result;
+	
+	result = vect - basis.getOrigin(); //shift to origin
+	result = tf::quatRotate(basis.getRotation(), result);
+	result *= scale;
+	
+	return result;
+}
+
 /*
 	GridRayTrace Impl
 */
 
-GridRayTrace::GridRayTrace
-	(
-		double x0, double y0, 
-		double x1, double y1 
-		//const OccupancyGrid& grid_ref
-	)	
+GridRayTrace::GridRayTrace(tf::Vector3 start, tf::Vector3 end, const OccupancyGrid& grid_ref)
 	: _x_store(), _y_store()
 {
 	//Transform (x,y) into map frame
+	start = scaledTransform(start, grid_ref.toGridFrame(), grid_ref.getScale());
+	end = scaledTransform(end, grid_ref.toGridFrame(), grid_ref.getScale());
 	
+	int x0 = start.getX(), y0 = start.getY();
+	int x1 = end.getX(), y1 = end.getY();
 	
 	//overestimates the amount of memory we need, but guaranteed to avoid reallocations
 	_x_store.reserve(ceil(abs(x1 - x0)));
