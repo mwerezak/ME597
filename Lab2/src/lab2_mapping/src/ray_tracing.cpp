@@ -14,6 +14,10 @@ void bresenham(int x0, int y0, int x1, int y1, std::vector<int>& x, std::vector<
 	int dx2 = x1 - x0;
 	int dy2 = y1 - y0;
 
+	//overestimates the amount of memory we need, but guaranteed to avoid reallocations
+	x.reserve(dx + 1);
+	y.reserve(dy + 1);
+
 	const bool s = abs(dy) > abs(dx);
 
 	if (s) {
@@ -43,11 +47,9 @@ void bresenham(int x0, int y0, int x1, int y1, std::vector<int>& x, std::vector<
 	}
 }
 
-//Takes vect and converts it into the frame defined by basis and scale.
 tf::Vector3 scaledTransform(const tf::Vector3& vect, const tf::Transform& transform, tfScalar scale)
 {
-	tf::Vector3 result = tf::quatRotate(transform.getRotation(), vect);
-	result += transform.getOrigin();
+	tf::Vector3 result = transform(vect);
 	result /= scale;
 	
 	return result;
@@ -66,14 +68,6 @@ GridRayTrace::GridRayTrace(tf::Vector3 start, tf::Vector3 end, const OccupancyGr
 	
 	double x0 = start.getX(), y0 = start.getY();
 	double x1 = end.getX(), y1 = end.getY();
-	
-	//overestimates the amount of memory we need, but guaranteed to avoid reallocations
-	_x_store.reserve(ceil(abs(x1 - x0)));
-	_y_store.reserve(ceil(abs(y1 - y0)));
-	
-	ROS_WARN("floor(-0.2) = %f", floor(-0.2));
-	ROS_WARN("(x0, y0) -> (%f, %f)", x0, y0);
-	ROS_WARN("(x1, y1) -> (%f, %f)", x1, y1);
 	
 	bresenham
 		(

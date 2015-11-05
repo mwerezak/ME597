@@ -8,7 +8,6 @@
 #include <tf/tf.h>
 #include <tf/LinearMath/Scalar.h>
 #include <tf/LinearMath/Transform.h>
-#include <geometry_msgs/Pose.h>
 
 using namespace geometry_msgs;
 
@@ -26,13 +25,14 @@ class OccupancyGrid
 {
 	private:
 		int _width, _height;
-		double* _grid_store; //ptr to 2D array
+		std::vector<logit_val> _grid_store;
 		
 		tf::Transform _grid_origin, _grid_origin_inv;
 		tfScalar _grid_scale;
 	
 	public:
-		OccupancyGrid(int w, int h, Pose& origin);
+		//OccupancyGrid();
+		OccupancyGrid(int w, int h, tfScalar cell_size, tf::Transform& origin);
 		int getWidth() const;
 		int getHeight() const;
 		
@@ -44,5 +44,10 @@ class OccupancyGrid
 		logit_val readValue(int i, int j) const;
 		logit_val& valueAt(int i, int j);
 };
+
+#include <ostream>
+
+//debug print
+std::ostream& operator<<(std::ostream& strm, const OccupancyGrid& grid);
 
 #endif
