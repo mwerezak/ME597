@@ -72,12 +72,16 @@ GridRayTrace::GridRayTrace(tf::Vector3 start, tf::Vector3 end, const OccupancyGr
 	_max_idx = std::min(_x_store.size(), _y_store.size());
 }
 
+bool GridRayTrace::hasNext() const
+{
+	return _cur_idx >= _max_idx;
+}
+
 //Writes the next i,j pair to the given pointers.
 //Returns true if there is another i,j pair after this one, false if the ray trace is done.
 bool GridRayTrace::getNextPoint(int& i, int& j)
 {
-	if(_cur_idx >= _max_idx)
-		return false;
+	if(!hasNext()) return false;
 	
 	i = _x_store[_cur_idx];
 	j = _y_store[_cur_idx];

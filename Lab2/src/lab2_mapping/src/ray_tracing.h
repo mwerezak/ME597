@@ -19,6 +19,9 @@ class GridRayTrace
 		//Writes the next i,j pair to the given pointers and returns true.
 		//Returns false if there were no more points and i,j left untouched.
 		bool getNextPoint(int& i, int& j);
+		
+		//Checks if there is a next point without advancing the ray trace.
+		bool hasNext() const;
 };
 
 #endif
