@@ -17,7 +17,12 @@ void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_da
 	*/
 	const tf::Vector3 scan_origin(0.0, 0.0, 0.0);
 	const tf::Vector3 scan_basis(1.0, 0.0, 0.0); //unit vector corresponding to zero angle.
+	
+	#ifdef LIVE
+	const tf::Vector3 zaxis(0.0, 0.0, -1.0);
+	#else
 	const tf::Vector3 zaxis(0.0, 0.0, 1.0);
+	#endif
 	
 	tf::Transform pan_transform; //used to rotate the scan with angle
 	pan_transform.setOrigin(scan_origin);

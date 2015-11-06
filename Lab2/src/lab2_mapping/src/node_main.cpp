@@ -29,6 +29,18 @@ tf::Transform ips_robot;
 
 OccupancyGrid occupancy_map(10.0, 10.0, 0.20, tf::Vector3(0.0, 0.0, 0.0));
 
+#ifdef LIVE
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+//Callback function for the Position topic (LIVE)
+void pose_callback(const geometry_msgs::PoseWithCovarianceStamped& msg)
+{
+	tf::poseMsgToTF(msg.pose.pose, ips_robot);
+	
+	//ROS_DEBUG("pose_callback X: %f Y: %f Yaw: %f", 
+	//			ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
+	//			tf::getYaw(ips_robot.getRotation()));
+}
+#else
 //Callback function for the Position topic (SIMULATION)
 void pose_callback(const gazebo_msgs::ModelStates& msg) 
 {
@@ -41,17 +53,8 @@ void pose_callback(const gazebo_msgs::ModelStates& msg)
 	//			ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
 	//			tf::getYaw(ips_robot.getRotation()));
 }
+#endif
 
-//Callback function for the Position topic (LIVE)
-/*
-void pose_callback(const geometry_msgs::PoseWithCovarianceStamped& msg)
-{
-	tf::poseMsgToTF(msg.pose.pose, ips_robot);
-	
-	ROS_DEBUG("pose_callback X: %f Y: %f Yaw: %f", 
-				ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
-				tf::getYaw(ips_robot.getRotation()));
-}*/
 
 /*
 //Callback function for the map
