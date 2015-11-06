@@ -7,6 +7,7 @@
 
 #include <tf/tf.h>
 #include <tf/transform_datatypes.h>
+#include <nav_msgs/OccupancyGrid.h>
 
 using namespace geometry_msgs;
 
@@ -26,12 +27,12 @@ class OccupancyGrid
 		int _wlen, _hlen;
 		std::vector<logit_val> _grid_store;
 		
-		tf::Transform _to_grid_frame;
+		tf::Transform _origin;
 		tfScalar _grid_scale;
 	
 	public:
-		OccupancyGrid(int w, int h, tfScalar cell_size, double x, double y);
-		OccupancyGrid(int w, int h, tfScalar cell_size, const tf::Vector3& origin);
+		OccupancyGrid(double w, double h, double cell_size, double x, double y);
+		OccupancyGrid(double w, double h, double cell_size, const tf::Vector3& origin);
 		int getWidth() const;
 		int getHeight() const;
 		tfScalar getScale() const; //The real-world width and height of each grid cell	
@@ -40,6 +41,8 @@ class OccupancyGrid
 		
 		logit_val readValue(int i, int j) const;
 		logit_val& valueAt(int i, int j);
+	
+		void writeToMsg(nav_msgs::OccupancyGrid& msg) const;
 };
 
 #include <ostream>
