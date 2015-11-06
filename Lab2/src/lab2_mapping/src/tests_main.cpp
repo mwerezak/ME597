@@ -1,10 +1,13 @@
+#include <ostream>
 #include <fstream>
 #include <tf/LinearMath/Vector3.h>
 #include <tf/LinearMath/Quaternion.h>
 #include <tf/LinearMath/Transform.h>
 #include <angles/angles.h>
+
 #include "ray_tracing.h"
 #include "occupancy_grid.h"
+#include "laser_scan.h"
 
 void setTransformRPY
 	(
@@ -26,22 +29,20 @@ void setTransform2D(tf::Transform& transform, tfScalar x, tfScalar y, tfScalar y
 	setTransformRPY(transform, x, y, 0.0, 0.0, 0.0, yaw);
 }
 
-void TestGridRayTrace(std::ofstream& output)
+/*
+	Tests Definitions
+*/
+void TestGridRayTrace(std::ostream& output)
 {
-	output << "*** GridRayTrace\n";
-	
-	tf::Vector3 start(2.0, 2.0, 0.0);
-	tf::Vector3 end(+11.0, 13.0, 0.0);
+	tf::Vector3 start(1.0, 1.0, 0.0);
+	tf::Vector3 end(10.0, 10.0, 0.0);
 	
 	output << start.getX() << "," << start.getY();
 	output << " -> ";
 	output << end.getX() << "," << end.getY();
 	output << "\n";
 	
-	tf::Transform origin;
-	setTransform2D(origin, 1.0, 1.0, angles::from_degrees(90));
-	
-	OccupancyGrid test_grid(0, 0, 2.0, origin);
+	OccupancyGrid test_grid(0, 0, 2.0, 0.0, 0.0);
 	
 	int i, j;
 	GridRayTrace test_trace(start, end, test_grid);
@@ -49,28 +50,62 @@ void TestGridRayTrace(std::ofstream& output)
 		output << i << ", " << j << "\n";
 }
 
-void TestOccupancyGrid(std::ofstream& output)
+void TestOccupancyGrid(std::ostream& output)
 {
-	tf::Transform origin;
-	setTransform2D(origin, 1.0, 1.0, angles::from_degrees(90));
-	OccupancyGrid test_grid(5, 5, 2.0, origin);
+	tf::Vector3 origin(1.0, 1.0, 0.0);
+	OccupancyGrid test_grid(5, 5, 2.0, 1.0, 1.0);
 	test_grid.valueAt(0,0) = 0.5;
 	test_grid.valueAt(2,3) = 0.7;
 	output << test_grid;
 }
 
-int main()
+void TestMappingUpdate(std::ostream& output)
 {
-	std::ofstream output;
-	output.open("test_output.txt");
+	sensor_msgs::LaserScan test_scan;
+	test_scan.angle_min = angles::from_degrees(-90.0);
+	test_scan.angle_max = angles::from_degrees(+90.0);
+	test_scan.angle_increment = angles::from_degrees(45.0);
+	test_scan.range_min = 1.7;
+	test_scan.range_max = 5.5;
+	for(double angle = test_scan.angle_min; angle <= test_scan.angle_max; angle += test_scan.angle_increment)
+	{
+		test_scan.ranges.push_back(4.5);
+	}
 	
-	output << "\nTestGridRayTrace:\n";
-	TestGridRayTrace(output);
+	OccupancyGrid test_grid(12, 12, 1.0, 0.0, 0.0);
+	MappingUpdate(test_grid, test_scan);
 	
-	output << "\nTestOccupancyGrid:\n";
-	TestOccupancyGrid(output);
+	//tf::Vector3 beam_start(0.0, 0.0, 0.0);
+	//tf::Vector3 beam_end(0.0, 6.0, 0.0);
+	//MapUpdateBeamHit(test_grid, beam_start, beam_end);
 	
-	output << "\n\n";
-	output.close();
+	output << test_grid;
+}
+ 
+int main(int argc, char** argv)
+{
+	std::ostream* output = &std::cout;
+	
+	/*
+	std::fstream fout;
+
+	if(argc > 1)
+	{
+		fout.open(argv[1]);
+		output = &fout;
+	}
+	*/
+	
+	//*output << "\n*** TestGridRayTrace:\n";
+	//TestGridRayTrace(*output);
+	
+	//*output << "\n*** TestOccupancyGrid:\n";
+	//TestOccupancyGrid(*output);
+	
+	*output << "\n*** TestMappingUpdate:\n";
+	TestMappingUpdate(*output);
+	
+	*output << "\n\n";
+	//output.close();
 	return 0;
 }

@@ -24,14 +24,15 @@ prob_val probability(logit_val logit);
 class OccupancyGrid
 {
 	private:
-		int _width, _height;
+		int _wlen, _hlen;
 		std::vector<logit_val> _grid_store;
 		
 		tf::Transform _to_grid_frame;
 		tfScalar _grid_scale;
 	
 	public:
-		OccupancyGrid(int w, int h, tfScalar cell_size, tf::Transform& origin);
+		OccupancyGrid(int w, int h, tfScalar cell_size, double x, double y);
+		OccupancyGrid(int w, int h, tfScalar cell_size, const tf::Vector3& origin);
 		int getWidth() const;
 		int getHeight() const;
 		tfScalar getScale() const; //The real-world width and height of each grid cell	
