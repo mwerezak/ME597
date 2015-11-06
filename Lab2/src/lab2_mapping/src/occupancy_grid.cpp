@@ -37,6 +37,7 @@ OccupancyGrid::OccupancyGrid(double w, double h, double cell_size, const tf::Vec
 int OccupancyGrid::getWidth() const { return _wlen; }
 int OccupancyGrid::getHeight() const { return _hlen; }
 tfScalar OccupancyGrid::getScale() const { return _grid_scale; }
+const tf::Transform& OccupancyGrid::getOrigin() const { return _origin; }
 
 tf::Vector3 OccupancyGrid::toGridFrame(const tf::Vector3& vect) const
 {

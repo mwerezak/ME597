@@ -15,6 +15,7 @@
 #include <geometry_msgs/Twist.h>
 #include <tf/tf.h>
 #include <tf/transform_datatypes.h>
+#include <tf/transform_broadcaster.h>
 #include <gazebo_msgs/ModelStates.h>
 #include <visualization_msgs/Marker.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -25,9 +26,12 @@
 
 int tick;
 
+tf::TransformBroadcaster tf_bcaster;
+ros::Publisher pose_publisher;
+
 tf::Transform ips_robot;
 
-OccupancyGrid occupancy_map(10.0, 10.0, 0.20, tf::Vector3(0.0, 0.0, 0.0));
+OccupancyGrid occupancy_map(20.0, 20.0, 0.10, tf::Vector3(0.0, 0.0, 0.0));
 
 //Callback function for the Position topic (SIMULATION)
 void pose_callback(const gazebo_msgs::ModelStates& msg) 
@@ -37,9 +41,15 @@ void pose_callback(const gazebo_msgs::ModelStates& msg)
 	for(i = 0; i < msg.name.size(); i++) if(msg.name[i] == "mobile_base") break;
 
 	tf::poseMsgToTF(msg.pose[i], ips_robot);
+	pose_publisher.publish(msg.pose[i]);
 	//ROS_WARN("pose_callback X: %f Y: %f Yaw: %f", 
 	//			ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
 	//			tf::getYaw(ips_robot.getRotation()));
+	
+	//tf_bcaster.sendTransform
+	//	(
+	//		tf::StampedTransform(ips_robot, ros::Time::now(), "world", "ips")
+	//	);
 }
 
 //Callback function for the Position topic (LIVE)
@@ -66,7 +76,7 @@ void map_callback(const nav_msgs::OccupancyGrid& msg)
 void scan_callback(const sensor_msgs::LaserScan& msg)
 {
 	MappingUpdate(occupancy_map, msg, ips_robot);
-	//ROS_WARN("scan_callback");
+	ROS_WARN("scan_callback");
 }
 
 int main(int argc, char **argv)
@@ -82,8 +92,13 @@ int main(int argc, char **argv)
 
 	//Setup topics to Publish from this node
 	//ros::Publisher velocity_publisher = node.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
-	//pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
+	pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
 	//marker_pub = node.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
+	
+	//tf_bcaster.sendTransform
+	//	(
+	//		tf::StampedTransform(occupancy_map.getOrigin(), ros::Time::now(), "world", "map")
+	//	);
 
 	ros::Publisher map_publisher = node.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
 	nav_msgs::OccupancyGrid map_msg;
@@ -93,7 +108,7 @@ int main(int argc, char **argv)
 	ips_robot.setRotation(tf::createQuaternionFromYaw(0.0));
 
 	//Set the loop rate
-	ros::Rate loop_rate(20);    //20Hz update rate
+	ros::Rate loop_rate(100);    //20Hz update rate
 
 	tick = 0;
 	while (ros::ok())
