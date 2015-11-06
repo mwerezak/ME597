@@ -6,8 +6,7 @@
 */
 
 #include <tf/tf.h>
-#include <tf/LinearMath/Scalar.h>
-#include <tf/LinearMath/Transform.h>
+#include <tf/transform_datatypes.h>
 
 using namespace geometry_msgs;
 

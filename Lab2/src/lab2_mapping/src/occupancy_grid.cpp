@@ -1,8 +1,7 @@
 #include "occupancy_grid.h"
 
 #include <math.h>
-#include <tf/LinearMath/Vector3.h>
-#include <tf/LinearMath/Quaternion.h>
+#include <tf/transform_datatypes.h>
 
 logit_val logit(prob_val p)
 {

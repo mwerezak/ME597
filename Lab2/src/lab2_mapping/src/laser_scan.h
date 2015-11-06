@@ -2,7 +2,7 @@
 #define LASER_SCAN_H
 
 #include <ros/ros.h>
-#include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
 #include <sensor_msgs/LaserScan.h>
 #include "occupancy_grid.h"
 

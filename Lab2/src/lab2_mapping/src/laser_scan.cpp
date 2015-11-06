@@ -1,8 +1,6 @@
 #include "laser_scan.h"
 
-#include <tf/LinearMath/Vector3.h>
-#include <tf/LinearMath/Transform.h>
-#include <tf/LinearMath/Quaternion.h>
+#include <tf/transform_datatypes.h>
 #include <angles/angles.h>
 #include "ray_tracing.h"
 

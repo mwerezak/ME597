@@ -2,9 +2,7 @@
 #define RAY_TRACING_H
 
 #include <tf/tf.h>
-#include <tf/LinearMath/Scalar.h>
-#include <tf/LinearMath/Vector3.h>
-#include <tf/LinearMath/Transform.h>
+#include <tf/transform_datatypes.h>
 #include "occupancy_grid.h"
 
 class GridRayTrace
