@@ -25,6 +25,8 @@
 
 int tick;
 
+ros::Publisher pose_publisher;
+
 tf::Transform ips_robot;
 
 OccupancyGrid occupancy_map(10.0, 10.0, 0.20, tf::Vector3(0.0, 0.0, 0.0));
@@ -49,6 +51,12 @@ void pose_callback(const gazebo_msgs::ModelStates& msg)
 	for(i = 0; i < msg.name.size(); i++) if(msg.name[i] == "mobile_base") break;
 
 	tf::poseMsgToTF(msg.pose[i], ips_robot);
+	
+	geometry_msgs::PoseStamped pose;
+	pose.header.stamp = ros::Time::now();
+	pose.header.frame_id = "pose";
+	pose.pose = msg.pose[i];
+	pose_publisher.publish(pose);
 	//ROS_WARN("pose_callback X: %f Y: %f Yaw: %f", 
 	//			ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
 	//			tf::getYaw(ips_robot.getRotation()));
@@ -85,7 +93,7 @@ int main(int argc, char **argv)
 
 	//Setup topics to Publish from this node
 	//ros::Publisher velocity_publisher = node.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
-	//pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
+	pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
 	//marker_pub = node.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
 
 	ros::Publisher map_publisher = node.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
