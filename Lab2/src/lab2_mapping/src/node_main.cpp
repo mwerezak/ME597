@@ -13,18 +13,23 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <tf/tf.h>
 #include <tf/transform_datatypes.h>
 #include <gazebo_msgs/ModelStates.h>
 #include <visualization_msgs/Marker.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <sensor_msgs/LaserScan.h>
+
+#include "occupancy_grid.h"
+#include "laser_scan.h"
 
 
 ros::Publisher pose_publisher;
 ros::Publisher marker_pub;
 
-double ips_x;
-double ips_y;
-double ips_yaw;
+tf::Transform ips_robot;
+
+OccupancyGrid occupancy_map(10.0, 10.0, 0.10, tf::Vector3(0.0, 0.0, 0.0));
 
 //Callback function for the Position topic (SIMULATION)
 void pose_callback(const gazebo_msgs::ModelStates& msg) 
@@ -33,21 +38,18 @@ void pose_callback(const gazebo_msgs::ModelStates& msg)
 	int i;
 	for(i = 0; i < msg.name.size(); i++) if(msg.name[i] == "mobile_base") break;
 
-	ips_x = msg.pose[i].position.x ;
-	ips_y = msg.pose[i].position.y ;
-	ips_yaw = tf::getYaw(msg.pose[i].orientation);
-
+	tf::poseMsgToTF(msg.pose[i], ips_robot);
 }
 
 //Callback function for the Position topic (LIVE)
 /*
 void pose_callback(const geometry_msgs::PoseWithCovarianceStamped& msg)
 {
-
-	ips_x X = msg.pose.pose.position.x; // Robot X psotition
-	ips_y Y = msg.pose.pose.position.y; // Robot Y psotition
-	ips_yaw = tf::getYaw(msg.pose.pose.orientation); // Robot Yaw
-	ROS_DEBUG("pose_callback X: %f Y: %f Yaw: %f", X, Y, Yaw);
+	tf::poseMsgToTF(msg.pose.pose, ips_robot);
+	
+	ROS_DEBUG("pose_callback X: %f Y: %f Yaw: %f", 
+				ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
+				tf::getYaw(ips_robot.getRotation()));
 }*/
 
 //Callback function for the map
@@ -58,38 +60,39 @@ void map_callback(const nav_msgs::OccupancyGrid& msg)
 	//you probably want to save the map into a form which is easy to work with
 }
 
+void scan_callback(const sensor_msgs::LaserScan& msg)
+{
+	MappingUpdate(occupancy_map, msg, ips_robot);
+}
+
 int main(int argc, char **argv)
 {
 	//Initialize the ROS framework
 	ros::init(argc,argv,"main_control");
-	ros::NodeHandle n;
+	ros::NodeHandle node;
 
 	//Subscribe to the desired topics and assign callbacks
-	ros::Subscriber pose_sub = n.subscribe("/gazebo/model_states", 1, pose_callback);
-	ros::Subscriber map_sub = n.subscribe("/map", 1, map_callback);
+	ros::Subscriber pose_sub = node.subscribe("/gazebo/model_states", 1, pose_callback);
+	ros::Subscriber map_sub = node.subscribe("/map", 1, map_callback);
+	ros::Subscriber kinect_sub = node.subscribe("/scan", 1, scan_callback);
 
 	//Setup topics to Publish from this node
-	ros::Publisher velocity_publisher = n.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
-	pose_publisher = n.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
-	marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
+	ros::Publisher velocity_publisher = node.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
+	pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
+	marker_pub = node.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
 
-	//Velocity control variable
-	geometry_msgs::Twist vel;
+	//Initialize the robot position/orientation to some default value
+	ips_robot.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+	ips_robot.setRotation(tf::createQuaternionFromYaw(0.0));
 
 	//Set the loop rate
 	ros::Rate loop_rate(20);    //20Hz update rate
-
 
 	while (ros::ok())
 	{
 		loop_rate.sleep(); //Maintain the loop rate
 		ros::spinOnce();   //Check for new messages
-
-		//Main loop code goes here:
-		vel.linear.x = 0.1; // set linear speed
-		vel.angular.z = 0.3; // set angular speed
-
-		velocity_publisher.publish(vel); // Publish the command velocity
+		
 	}
 
 	return 0;
