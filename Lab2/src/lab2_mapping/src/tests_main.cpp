@@ -72,8 +72,13 @@ void TestMappingUpdate(std::ostream& output)
 		test_scan.ranges.push_back(4.5);
 	}
 	
+	tf::Vector3 loc(-5.0, 0.0, 0.0);
+	tf::Quaternion rot;
+	rot.setRPY(0.0, 0.0, angles::from_degrees(-90.0));
+	tf::Transform robot(rot, loc);
+	
 	OccupancyGrid test_grid(12, 12, 1.0, 0.0, 0.0);
-	MappingUpdate(test_grid, test_scan);
+	MappingUpdate(test_grid, test_scan, robot);
 	
 	//tf::Vector3 beam_start(0.0, 0.0, 0.0);
 	//tf::Vector3 beam_end(0.0, 6.0, 0.0);

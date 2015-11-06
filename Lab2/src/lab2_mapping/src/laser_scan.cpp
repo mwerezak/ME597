@@ -10,11 +10,8 @@ static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.9); //occupancy of a cell
 static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.05); //occupancy of a cell where where the beam passed through and hit a feature behind
 static const logit_val OCCUPANCY_NOTHING = logit(0.1); //occupancy of a cell where where the beam hit nothing at all
 
-void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data)
+void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data, const tf::Transform& robot_pos)
 {
-	//TODO add transformation to world frame
-	//For now just assume robot is at world origin with default orientation.
-	
 	/*
 	From ROS docs:
 		angles are measured around the positive Z axis (counterclockwise, if Z is up)
@@ -53,7 +50,7 @@ void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_da
 					  beam_end.getX(), beam_end.getY()
 					 );
 			*/
-			MapUpdateBeamHit(occ_map, beam_start, beam_end);
+			MapUpdateBeamHit(occ_map, robot_pos(beam_start), robot_pos(beam_end));
 		}
 		
 		angle += scan_data.angle_increment;
