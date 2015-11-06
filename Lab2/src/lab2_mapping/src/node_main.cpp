@@ -29,7 +29,7 @@ ros::Publisher marker_pub;
 
 tf::Transform ips_robot;
 
-OccupancyGrid occupancy_map(10.0, 10.0, 0.10, tf::Vector3(0.0, 0.0, 0.0));
+OccupancyGrid occupancy_map(10.0, 10.0, 0.50, tf::Vector3(0.0, 0.0, 0.0));
 
 //Callback function for the Position topic (SIMULATION)
 void pose_callback(const gazebo_msgs::ModelStates& msg) 
@@ -39,6 +39,9 @@ void pose_callback(const gazebo_msgs::ModelStates& msg)
 	for(i = 0; i < msg.name.size(); i++) if(msg.name[i] == "mobile_base") break;
 
 	tf::poseMsgToTF(msg.pose[i], ips_robot);
+	ROS_WARN("pose_callback X: %f Y: %f Yaw: %f", 
+				ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
+				tf::getYaw(ips_robot.getRotation()));
 }
 
 //Callback function for the Position topic (LIVE)
@@ -63,6 +66,7 @@ void map_callback(const nav_msgs::OccupancyGrid& msg)
 void scan_callback(const sensor_msgs::LaserScan& msg)
 {
 	MappingUpdate(occupancy_map, msg, ips_robot);
+	ROS_WARN("scan_callback");
 }
 
 int main(int argc, char **argv)
