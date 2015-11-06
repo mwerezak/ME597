@@ -61,6 +61,8 @@ GridRayTrace::GridRayTrace(tf::Vector3 start, tf::Vector3 end, const OccupancyGr
 	double x0 = start.getX(), y0 = start.getY();
 	double x1 = end.getX(), y1 = end.getY();
 	
+	//ROS_WARN("start: (%f, %f) -> end: (%f, %f)", x0, y0, x1, y1);
+	
 	bresenham
 		(
 			floor(x0), floor(y0), 
@@ -74,7 +76,7 @@ GridRayTrace::GridRayTrace(tf::Vector3 start, tf::Vector3 end, const OccupancyGr
 
 bool GridRayTrace::hasNext() const
 {
-	return _cur_idx >= _max_idx;
+	return _cur_idx < _max_idx;
 }
 
 //Writes the next i,j pair to the given pointers.
