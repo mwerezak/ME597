@@ -11,22 +11,14 @@
 // //////////////////////////////////////////////////////////
 
 #include <ros/ros.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
 #include <tf/tf.h>
 #include <tf/transform_datatypes.h>
-#include <tf/transform_broadcaster.h>
-#include <gazebo_msgs/ModelStates.h>
-#include <visualization_msgs/Marker.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/LaserScan.h>
-#include <visualization_msgs/Marker.h>
 
 #include "frames.h"
 #include "occupancy_grid.h"
 #include "laser_scan.h"
-
-int tick;
 
 ros::Publisher map_publisher;
 
