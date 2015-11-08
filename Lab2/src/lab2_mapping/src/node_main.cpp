@@ -15,27 +15,25 @@
 #include <geometry_msgs/Twist.h>
 #include <tf/tf.h>
 #include <tf/transform_datatypes.h>
-//#include <tf/transform_broadcaster.h>
+#include <tf/transform_broadcaster.h>
 #include <gazebo_msgs/ModelStates.h>
 #include <visualization_msgs/Marker.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/LaserScan.h>
 #include <visualization_msgs/Marker.h>
 
+#include "frames.h"
 #include "occupancy_grid.h"
 #include "laser_scan.h"
 
 int tick;
 
-//tf::TransformBroadcaster tf_bcaster;
 ros::Publisher pose_publisher;
 ros::Publisher map_publisher;
-//ros::Publisher vision_publisher;
 
 tf::Transform ips_robot;
 
 OccupancyGrid occupancy_map(20.0, 20.0, 0.05, tf::Vector3(0.0, 0.0, 0.0));
-//OccupancyGrid vision_map(20.0, 20.0, 0.10, tf::Vector3(0.0, 0.0, 0.0));
 
 #ifdef LIVE
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -53,39 +51,27 @@ void pose_callback(const geometry_msgs::PoseWithCovarianceStamped& msg)
 //Callback function for the Position topic (SIMULATION)
 void pose_callback(const gazebo_msgs::ModelStates& msg) 
 {
+	//search the ModelStates struct for the pose.
+	geometry_msgs::Pose robot_pose;
+	for(int i = 0; i < msg.name.size(); i++) 
+		if(msg.name[i] == "mobile_base") 
+			robot_pose = msg.pose[i];
 
-	int i;
-	for(i = 0; i < msg.name.size(); i++) if(msg.name[i] == "mobile_base") break;
+	//Update ips_robot
+	tf::poseMsgToTF(robot_pose, ips_robot);
 
-	tf::poseMsgToTF(msg.pose[i], ips_robot);
-	
+	//Publish the pose for Rviz.
 	geometry_msgs::PoseStamped pose;
 	pose.header.stamp = ros::Time::now();
-	pose.header.frame_id = "/map";
-	pose.pose = msg.pose[i];
+	pose.header.frame_id = WORLD_FRAME;
+	pose.pose = robot_pose;
 	pose_publisher.publish(pose);
 	
-	ROS_WARN("pose_callback X: %f Y: %f Yaw: %f", 
-				ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
-				tf::getYaw(ips_robot.getRotation()));
-	
-	//tf_bcaster.sendTransform
-	//	(
-	//		tf::StampedTransform(ips_robot, ros::Time::now(), "world", "pose")
-	//	);
+	//ROS_WARN("pose_callback X: %f Y: %f Yaw: %f", 
+	//			ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
+	//			tf::getYaw(ips_robot.getRotation()));
 }
 #endif
-
-
-/*
-//Callback function for the map
-void map_callback(const nav_msgs::OccupancyGrid& msg)
-{
-	//This function is called when a new map is received
-
-	//you probably want to save the map into a form which is easy to work with
-}
-*/
 
 void scan_callback(const sensor_msgs::LaserScan& msg)
 {
@@ -103,7 +89,7 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
 int main(int argc, char **argv)
 {
 	//Initialize the ROS framework
-	ros::init(argc,argv,"main_control");
+	ros::init(argc,argv,"lab2_mapping");
 	ros::NodeHandle node;
 
 	//Subscribe to the desired topics and assign callbacks
@@ -113,15 +99,10 @@ int main(int argc, char **argv)
 	ros::Subscriber pose_sub = node.subscribe("/gazebo/model_states", 1, pose_callback);
 	#endif
 
-	ros::Subscriber kinect_sub = node.subscribe("/scan", 1, scan_callback);
+	ros::Subscriber scan_sub = node.subscribe("/scan", 1, scan_callback);
 
 	//Setup topics to Publish from this node
 	pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
-	
-	//tf_bcaster.sendTransform
-	//	(
-	//		tf::StampedTransform(occupancy_map.getOrigin(), ros::Time::now(), "world", "map")
-	//	);
 
 	map_publisher = node.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
 
@@ -138,13 +119,18 @@ int main(int argc, char **argv)
 		loop_rate.sleep(); //Maintain the loop rate
 		ros::spinOnce();   //Check for new messages
 		
-		/*
-		if(tick % 20 == 0)
-		{
-			occupancy_map.writeToMsg(map_msg);
-			map_publisher.publish(map_msg);
-		}
-		*/
+		//This is dumb, but apparently ROS requires you to constantly
+		//resend frames, even if they never change?
+		static tf::TransformBroadcaster tf_bcaster;
+		tf_bcaster.sendTransform
+			(
+				tf::StampedTransform
+					(
+						occupancy_map.getOrigin(), 
+						ros::Time::now(), 
+						WORLD_FRAME, MAP_FRAME
+					)
+			);
 		
 		tick++;
 	}
