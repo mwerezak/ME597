@@ -102,6 +102,7 @@ std::ostream& operator<<(std::ostream& strm, const OccupancyGrid& grid)
 //If needed: cache the message data and only write updates
 void OccupancyGrid::writeToMsg(nav_msgs::OccupancyGrid& msg) const
 {
+	msg.header.seq++;
 	msg.header.stamp = ros::Time::now();
 	msg.header.frame_id = MAP_FRAME;
 	

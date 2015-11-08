@@ -33,7 +33,7 @@ ros::Publisher map_publisher;
 
 tf::Transform ips_robot;
 
-OccupancyGrid occupancy_map(20.0, 20.0, 0.05, tf::Vector3(0.0, 0.0, 0.0));
+OccupancyGrid occupancy_map(15.0, 15.0, 0.05, tf::Vector3(0.0, 0.0, 0.0));
 
 #ifdef LIVE
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -62,6 +62,7 @@ void pose_callback(const gazebo_msgs::ModelStates& msg)
 
 	//Publish the pose for Rviz.
 	geometry_msgs::PoseStamped pose;
+	pose.header.seq++; //somehow this works. Frigging magic.
 	pose.header.stamp = ros::Time::now();
 	pose.header.frame_id = WORLD_FRAME;
 	pose.pose = robot_pose;
@@ -77,7 +78,7 @@ void scan_callback(const sensor_msgs::LaserScan& msg)
 {
 	//static const tf::Transform null_tf(tf::createQuaternionFromYaw(0.0), tf::Vector3(0, 0, 0));
 	
-	MappingUpdate(occupancy_map, msg, ips_robot);
+	UpdateMapFromScan(occupancy_map, msg);
 	//MappingUpdate(vision_map, msg, null_tf);
 	//ROS_WARN("scan_callback");
 	
@@ -113,12 +114,8 @@ int main(int argc, char **argv)
 	//Set the loop rate
 	ros::Rate loop_rate(20);    //20Hz update rate
 
-	tick = 0;
 	while (ros::ok())
 	{
-		loop_rate.sleep(); //Maintain the loop rate
-		ros::spinOnce();   //Check for new messages
-		
 		//This is dumb, but apparently ROS requires you to constantly
 		//resend frames, even if they never change?
 		static tf::TransformBroadcaster tf_bcaster;
@@ -132,7 +129,8 @@ int main(int argc, char **argv)
 					)
 			);
 		
-		tick++;
+		ros::spinOnce();   //Check for new messages
+		loop_rate.sleep(); //Maintain the loop rate
 	}
 
 	return 0;
