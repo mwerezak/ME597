@@ -78,9 +78,9 @@ void TestMappingUpdate(std::ostream& output)
 	OccupancyGrid test_grid(12, 12, 1.0, 0.0, 0.0);
 	MappingUpdate(test_grid, test_scan, robot);
 	
-	//tf::Vector3 beam_start(0.0, 0.0, 0.0);
-	//tf::Vector3 beam_end(0.0, 6.0, 0.0);
-	//MapUpdateBeamHit(test_grid, beam_start, beam_end);
+	tf::Vector3 beam_start(0.0, 0.0, 0.0);
+	tf::Vector3 beam_end(0.0, 6.0, 0.0);
+	MapUpdateBeamHit(test_grid, beam_start, beam_end);
 	
 	output << test_grid;
 }

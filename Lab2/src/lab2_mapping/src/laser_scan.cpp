@@ -1,12 +1,37 @@
 #include "laser_scan.h"
 
+#include <ros/ros.h>
+#include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 #include <angles/angles.h>
+#include "frames.h"
 #include "ray_tracing.h"
 
-static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.6); //occupancy of a cell where the beam hit a feature
-static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.4); //occupancy of a cell where where the beam passed through and hit a feature behind
-static const logit_val OCCUPANCY_NOTHING = logit(0.1); //occupancy of a cell where where the beam hit nothing at all
+static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.51); //occupancy of a cell where the beam hit a feature
+static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.49); //occupancy of a cell where where the beam passed through and hit a feature behind
+
+void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data)
+{
+	tf::StampedTransform robot_pos; //locate the robot
+	ros::Time scan_time = scan_data.header.stamp;
+	
+	try
+	{
+		static tf::TransformListener tf_listener;
+		
+		//Block until a position is available at the time of the scan
+		tf_listener.waitForTransform(WORLD_FRAME, ROBOT_FRAME, scan_time, ros::Duration(1.0));
+		
+		tf_listener.lookupTransform(WORLD_FRAME, ROBOT_FRAME, scan_time, robot_pos);
+	}
+	catch(tf::TransformException &ex)
+	{
+		ROS_ERROR("%s", ex.what());
+		return;
+	}
+	
+	MappingUpdate(occ_map, scan_data, robot_pos);
+}
 
 void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data, const tf::Transform& robot_pos)
 {
@@ -47,12 +72,19 @@ void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_da
 			beam_end *= scan_data.ranges[beam_idx];
 			
 			/*
-			ROS_ERROR("angle: %f\nbeam_start: (%f, %f)\nbeam_end: (%f, %f)", 
-					  angles::to_degrees(angle), 
-					  beam_start.getX(), beam_start.getY(),
-					  beam_end.getX(), beam_end.getY()
-					 );
+			ROS_WARN("angle: %fdeg\nbeam_start: (%f, %f)\nbeam_end: (%f, %f)", 
+						angles::to_degrees(angle), 
+						beam_start.getX(), beam_start.getY(),
+						beam_end.getX(), beam_end.getY()
+					);
+			
+			ROS_WARN("robot_pos: (%f, %f, %fdeg)",
+						robot_pos.getOrigin().getX(),
+						robot_pos.getOrigin().getY(),
+						angles::to_degrees(tf::getYaw(robot_pos.getRotation()))
+					);
 			*/
+			
 			MapUpdateBeamHit(occ_map, robot_pos(beam_start), robot_pos(beam_end));
 		}
 		
@@ -86,11 +118,4 @@ void MapUpdateBeamHit(OccupancyGrid& occ_map, const tf::Vector3& beam_start, con
 {
 	GridRayTrace trace(beam_start, hit_feature, occ_map);
 	_mapUpdateTrace(occ_map, trace, OCCUPANCY_HIT_AHEAD, OCCUPANCY_HIT_FEATURE);
-}
-
-//Updates the map given a beam that hit nothing
-void MapUpdateBeamMiss(OccupancyGrid& occ_map, const tf::Vector3& beam_start, const tf::Vector3& beam_end)
-{
-	GridRayTrace trace(beam_start, beam_end, occ_map);
-	_mapUpdateTrace(occ_map, trace, OCCUPANCY_NOTHING, OCCUPANCY_NOTHING);
 }
