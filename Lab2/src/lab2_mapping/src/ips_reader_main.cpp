@@ -5,6 +5,8 @@
 
 #include "frames.h"
 
+ros::Publisher pose_publisher;
+
 tf::TransformBroadcaster& getTfBroadcaster()
 {
 	static tf::TransformBroadcaster tf_bcaster;
@@ -26,6 +28,13 @@ void ips_callback(const geometry_msgs::PoseWithCovarianceStamped& msg)
 					ips_tf, ros::Time::now(), WORLD_FRAME, ROBOT_FRAME
 				)
 		);
+	
+	geometry_msgs::PoseStamped rviz_pose;
+	rviz_pose.header.seq++; //somehow this works. Frigging magic.
+	rviz_pose.header.stamp = ros::Time::now();
+	rviz_pose.header.frame_id = WORLD_FRAME;
+	rviz_pose.pose = msg.pose.pose;
+	pose_publisher.publish(rviz_pose);
 }
 #else
 
@@ -50,6 +59,14 @@ void ips_callback(const gazebo_msgs::ModelStates& msg)
 					ips_tf, ros::Time::now(), WORLD_FRAME, ROBOT_FRAME
 				)
 		);
+
+	//Publish the pose for Rviz.
+	geometry_msgs::PoseStamped rviz_pose;
+	rviz_pose.header.seq++;
+	rviz_pose.header.stamp = ros::Time::now();
+	rviz_pose.header.frame_id = WORLD_FRAME;
+	rviz_pose.pose = pose;
+	pose_publisher.publish(rviz_pose);
 }
 #endif
 
@@ -65,6 +82,9 @@ int main(int argc, char **argv)
 	#else
 	ros::Subscriber pose_sub = node.subscribe("/gazebo/model_states", 1, ips_callback);
 	#endif
+	
+	//Publish pose for Rviz
+	pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
 
 	ros::spin(); //spin forever - tf updates are processed in the subscriber callbacks.
 

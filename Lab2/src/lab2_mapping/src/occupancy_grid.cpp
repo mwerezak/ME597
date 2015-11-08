@@ -22,14 +22,13 @@ OccupancyGrid::OccupancyGrid(double w, double h, double cell_size, double center
 	_grid_scale(cell_size), 
 	_grid_store(_wlen*_hlen, 0.0)
 {
-	tf::Vector3 center_loc(center_x, center_y, 0.0);
 	tf::Quaternion orientation = tf::createQuaternionFromYaw(0.0);
 	
-	//Map origin is at the lower left corner of map
-	_center.setOrigin(tf::Vector3(w/2.0, h/2.0, 0.0));
-	_center.setRotation(tf::createQuaternionFromYaw(0.0));
+	_center.setOrigin(tf::Vector3(center_x, center_y, 0.0));
+	_center.setRotation(orientation);
 	
-	_origin.setOrigin(_center.inverse()(center_loc));
+	//Map origin is at the lower left corner of map
+	_origin.setOrigin(tf::Vector3(center_x - w/2.0, center_y - h/2.0, 0.0));
 	_origin.setRotation(orientation);
 }
 
@@ -41,11 +40,11 @@ OccupancyGrid::OccupancyGrid(double w, double h, double cell_size, const tf::Vec
 {
 	tf::Quaternion orientation = tf::createQuaternionFromYaw(0.0);
 	
-	//Map origin is at the lower left corner of map
-	_center.setOrigin(tf::Vector3(w/2.0, h/2.0, 0.0));
-	_center.setRotation(tf::createQuaternionFromYaw(0.0));
+	_center.setOrigin(center_loc);
+	_center.setRotation(orientation);
 	
-	_origin.setOrigin(_center.inverse()(center_loc));
+	//Map origin is at the lower left corner of map
+	_origin.setOrigin(tf::Vector3(center_loc.getX() - w/2.0, center_loc.getY() - h/2.0, 0.0));
 	_origin.setRotation(orientation);
 }
 
@@ -104,7 +103,7 @@ void OccupancyGrid::writeToMsg(nav_msgs::OccupancyGrid& msg) const
 {
 	msg.header.seq++;
 	msg.header.stamp = ros::Time::now();
-	msg.header.frame_id = MAP_FRAME;
+	msg.header.frame_id = WORLD_FRAME;
 	
 	msg.info.map_load_time = ros::Time::now();
 	msg.info.resolution = _grid_scale;
@@ -112,10 +111,7 @@ void OccupancyGrid::writeToMsg(nav_msgs::OccupancyGrid& msg) const
 	msg.info.height = getHeight();
 	
 	//the location of the LL corner wrt _origin
-	msg.info.origin.position.x = 0;
-	msg.info.origin.position.y = 0;
-	msg.info.origin.position.z = 0;
-	msg.info.origin.orientation = tf::createQuaternionMsgFromYaw(0.0);
+	tf::poseTFToMsg(_origin, msg.info.origin);
 	
 	msg.data.resize(_grid_store.size());
 	for(int i = 0; i < _grid_store.size(); i++)
