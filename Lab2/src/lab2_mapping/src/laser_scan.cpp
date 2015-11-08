@@ -4,8 +4,8 @@
 #include <angles/angles.h>
 #include "ray_tracing.h"
 
-static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.9); //occupancy of a cell where the beam hit a feature
-static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.05); //occupancy of a cell where where the beam passed through and hit a feature behind
+static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.6); //occupancy of a cell where the beam hit a feature
+static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.4); //occupancy of a cell where where the beam passed through and hit a feature behind
 static const logit_val OCCUPANCY_NOTHING = logit(0.1); //occupancy of a cell where where the beam hit nothing at all
 
 void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data, const tf::Transform& robot_pos)
@@ -17,7 +17,12 @@ void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_da
 	*/
 	const tf::Vector3 scan_origin(0.0, 0.0, 0.0);
 	const tf::Vector3 scan_basis(1.0, 0.0, 0.0); //unit vector corresponding to zero angle.
+	
+	#ifdef LIVE
+	const tf::Vector3 zaxis(0.0, 0.0, -1.0);
+	#else
 	const tf::Vector3 zaxis(0.0, 0.0, 1.0);
+	#endif
 	
 	tf::Transform pan_transform; //used to rotate the scan with angle
 	pan_transform.setOrigin(scan_origin);
@@ -30,7 +35,7 @@ void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_da
 		
 		//not sure if ranges[beam_idx] > range_max means nothing was hit or what.
 		//ROS docs say to discard the values so I guess that's what we'll do.
-		if(scan_data.range_min <= beam_range && beam_range <= scan_data.range_max)
+		if(!std::isnan(beam_range) && scan_data.range_min <= beam_range && beam_range <= scan_data.range_max)
 		{
 			tf::Quaternion pan_rotation(zaxis, angle);
 			pan_transform.setRotation(pan_rotation);

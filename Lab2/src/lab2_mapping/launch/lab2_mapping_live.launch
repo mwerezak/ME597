@@ -1,11 +1,9 @@
 <launch>
 	<!-- Testing Launch script so I don't have to manually restart all these pieces a million times -->
 	
-	<include file="$(find lab2_mapping)/launch/turtlebot_gazebo.launch" />
-	
 	<!--<include file="$(find turtlebot_rviz_launchers)/launch/view_navigation.launch" />-->
 	
-	<node pkg="lab2_mapping" type="lab2_mapping_node" name="lab2_mapping_node" output="screen" />
+	<node pkg="lab2_mapping" type="lab2_mapping_node_live" name="lab2_mapping_node" output="screen" />
 	
 
 </launch>
