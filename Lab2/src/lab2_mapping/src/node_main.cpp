@@ -61,9 +61,10 @@ void pose_callback(const gazebo_msgs::ModelStates& msg)
 	
 	geometry_msgs::PoseStamped pose;
 	pose.header.stamp = ros::Time::now();
-	pose.header.frame_id = "pose";
+	pose.header.frame_id = "/map";
 	pose.pose = msg.pose[i];
 	pose_publisher.publish(pose);
+	
 	ROS_WARN("pose_callback X: %f Y: %f Yaw: %f", 
 				ips_robot.getOrigin().getX(), ips_robot.getOrigin().getY(), 
 				tf::getYaw(ips_robot.getRotation()));
@@ -111,13 +112,11 @@ int main(int argc, char **argv)
 	#else
 	ros::Subscriber pose_sub = node.subscribe("/gazebo/model_states", 1, pose_callback);
 	#endif
-	//ros::Subscriber map_sub = node.subscribe("/map", 1, map_callback);
+
 	ros::Subscriber kinect_sub = node.subscribe("/scan", 1, scan_callback);
 
 	//Setup topics to Publish from this node
-	//ros::Publisher velocity_publisher = node.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
 	pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
-	//marker_pub = node.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
 	
 	//tf_bcaster.sendTransform
 	//	(
@@ -125,22 +124,6 @@ int main(int argc, char **argv)
 	//	);
 
 	map_publisher = node.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
-	
-	ros::Publisher marker_publisher = node.advertise<visualization_msgs::Marker>("/robot_marker", 1, true);
-	visualization_msgs::Marker ips_points;
-	ips_points.header.frame_id = "/map";
-	ips_points.id = 0;
-
-	ips_points.type = visualization_msgs::Marker::POINTS;
-	ips_points.scale.x = 0.1;
-	ips_points.scale.y = 0.1;
-
-	ips_points.color.g = 1.0f;
-	ips_points.color.a = 1.0;
-	
-	ips_points.points.resize(1);
-	
-	//vision_publisher = node.advertise<nav_msgs::OccupancyGrid>("/vision", 1, true);
 
 	//Initialize the robot position/orientation to some default value
 	ips_robot.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
@@ -155,13 +138,6 @@ int main(int argc, char **argv)
 		loop_rate.sleep(); //Maintain the loop rate
 		ros::spinOnce();   //Check for new messages
 		
-		geometry_msgs::Point p;
-		p.x = ips_robot.getOrigin().getX();
-		p.y = ips_robot.getOrigin().getY();
-		p.z = 0;
-		ips_points.points[0] = p;
-		
-		marker_publisher.publish(ips_points);
 		/*
 		if(tick % 20 == 0)
 		{
