@@ -4,12 +4,69 @@
 #include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
 #include <angles/angles.h>
+
 #include "frames.h"
 #include "ray_tracing.h"
+
+#define USE_INTERP
 
 static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.51); //occupancy of a cell where the beam hit a feature
 static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.49); //occupancy of a cell where where the beam passed through and hit a feature behind
 
+#ifdef USE_INTERP
+inline tf::Transform interpolateTF(tf::Transform start, tf::Transform end, double ratio)
+{
+	tf::Vector3 lerp_pos = start.getOrigin().lerp(end.getOrigin(), ratio);
+	tf::Quaternion lerp_rot = start.getRotation().slerp(end.getRotation(), ratio);
+	
+	return tf::Transform(lerp_rot, lerp_pos);
+}
+
+void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data)
+{
+	ros::Time scan_start_time = scan_data.header.stamp;
+	ros::Duration scan_duration = ros::Duration().fromSec(scan_data.time_increment * scan_data.ranges.size());
+	ros::Time scan_end_time = scan_start_time + scan_duration;
+	
+	tf::StampedTransform robot_start_pos;
+	tf::StampedTransform robot_end_pos;
+	
+	try
+	{
+		static tf::TransformListener tf_listener;
+		
+		//Block until a position is available at the time of the scan
+		tf_listener.waitForTransform(WORLD_FRAME, ROBOT_FRAME, scan_end_time, ros::Duration(1.0));
+		
+		tf_listener.lookupTransform(WORLD_FRAME, ROBOT_FRAME, scan_start_time, robot_start_pos);
+		tf_listener.lookupTransform(WORLD_FRAME, ROBOT_FRAME, scan_end_time, robot_end_pos);
+	}
+	catch(tf::TransformException &ex)
+	{
+		ROS_ERROR("%s", ex.what());
+		return;
+	}
+	
+	//iterate over each beam
+	for(int beam_idx = 0; beam_idx < scan_data.ranges.size(); beam_idx++)
+	{
+		double beam_range = scan_data.ranges[beam_idx];
+		double angle = scan_data.angle_min + scan_data.angle_increment*beam_idx;
+		
+		if(_checkValidBeam(beam_idx, scan_data))
+		{
+			tf::Vector3 beam_start = tf::Vector3(0.0, 0.0, 0.0);
+			tf::Vector3 beam_end = _getBeamHitPos(beam_range, angle);
+			
+			double ratio = beam_idx/double(scan_data.ranges.size() - 1);
+			tf::Transform robot_pos = interpolateTF(robot_start_pos, robot_end_pos, ratio);
+			
+			_mapUpdateBeamHit(occ_map, robot_pos(beam_start), robot_pos(beam_end));
+		}
+	}
+}
+
+#else
 void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data)
 {
 	tf::StampedTransform robot_pos; //locate the robot
@@ -30,46 +87,22 @@ void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& sca
 		return;
 	}
 	
-	MappingUpdate(occ_map, scan_data, robot_pos);
+	_mappingUpdate(occ_map, scan_data, robot_pos);
 }
+#endif
 
-void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data, const tf::Transform& robot_pos)
+void _mappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data, const tf::Transform& robot_pos)
 {
-	/*
-	From ROS docs:
-		angles are measured around the positive Z axis (counterclockwise, if Z is up)
-		with zero angle being forward along the x axis.
-	*/
-	const tf::Vector3 scan_origin(0.0, 0.0, 0.0);
-	const tf::Vector3 scan_basis(1.0, 0.0, 0.0); //unit vector corresponding to zero angle.
-	
-	#ifdef LIVE
-	const tf::Vector3 zaxis(0.0, 0.0, -1.0);
-	#else
-	const tf::Vector3 zaxis(0.0, 0.0, 1.0);
-	#endif
-	
-	tf::Transform pan_transform; //used to rotate the scan with angle
-	pan_transform.setOrigin(scan_origin);
-	
 	//iterate over each beam
 	double angle = scan_data.angle_min;
 	for(int beam_idx = 0; beam_idx < scan_data.ranges.size(); beam_idx++)
 	{
 		double beam_range = scan_data.ranges[beam_idx];
 		
-		//not sure if ranges[beam_idx] > range_max means nothing was hit or what.
-		//ROS docs say to discard the values so I guess that's what we'll do.
-		if(!std::isnan(beam_range) && scan_data.range_min <= beam_range && beam_range <= scan_data.range_max)
+		if(_checkValidBeam(beam_idx, scan_data))
 		{
-			tf::Quaternion pan_rotation(zaxis, angle);
-			pan_transform.setRotation(pan_rotation);
-
-			tf::Vector3 beam_start = pan_transform(scan_basis);
-			beam_start *= scan_data.range_min;
-
-			tf::Vector3 beam_end = pan_transform(scan_basis);
-			beam_end *= scan_data.ranges[beam_idx];
+			tf::Vector3 beam_start = tf::Vector3(0.0, 0.0, 0.0);
+			tf::Vector3 beam_end = _getBeamHitPos(beam_range, angle);
 			
 			/*
 			ROS_WARN("angle: %fdeg\nbeam_start: (%f, %f)\nbeam_end: (%f, %f)", 
@@ -85,11 +118,40 @@ void MappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_da
 					);
 			*/
 			
-			MapUpdateBeamHit(occ_map, robot_pos(beam_start), robot_pos(beam_end));
+			_mapUpdateBeamHit(occ_map, robot_pos(beam_start), robot_pos(beam_end));
 		}
 		
 		angle += scan_data.angle_increment;
 	}
+}
+
+bool _checkValidBeam(int beam_idx, const sensor_msgs::LaserScan& scan_data)
+{
+	double beam_range = scan_data.ranges[beam_idx];
+	return (!std::isnan(beam_range) && scan_data.range_min <= beam_range && beam_range <= scan_data.range_max);
+}
+
+/*
+From ROS docs:
+	angles are measured around the positive Z axis (counterclockwise, if Z is up)
+	with zero angle being forward along the x axis.
+*/
+tf::Vector3 _getBeamHitPos(double beam_range, double angle)
+{
+	const tf::Vector3 scan_basis(1.0, 0.0, 0.0); //unit vector corresponding to zero angle.
+	
+	#ifdef LIVE
+	const tf::Vector3 zaxis(0.0, 0.0, -1.0);
+	#else
+	const tf::Vector3 zaxis(0.0, 0.0, 1.0);
+	#endif
+	
+	tf::Transform pan_transform(tf::Quaternion(zaxis, angle), tf::Vector3(0.0, 0.0, 0.0)); 
+
+	tf::Vector3 hit_pos = pan_transform(scan_basis);
+	hit_pos *= beam_range;
+	
+	return hit_pos;
 }
 
 //Updates an occupancy map by modifying cells along the beam using beamval and modifying the end-cell using endval.
@@ -114,7 +176,7 @@ void _mapUpdateTrace(OccupancyGrid& occ_map, GridRayTrace& trace, logit_val beam
 }
 
 //Updates the map given a beam that hit a feature at end
-void MapUpdateBeamHit(OccupancyGrid& occ_map, const tf::Vector3& beam_start, const tf::Vector3& hit_feature)
+void _mapUpdateBeamHit(OccupancyGrid& occ_map, const tf::Vector3& beam_start, const tf::Vector3& hit_feature)
 {
 	GridRayTrace trace(beam_start, hit_feature, occ_map);
 	_mapUpdateTrace(occ_map, trace, OCCUPANCY_HIT_AHEAD, OCCUPANCY_HIT_FEATURE);
