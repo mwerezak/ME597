@@ -131,43 +131,51 @@ include_directories(
 ## either from message generation or dynamic reconfigure
 # add_dependencies(lab2_mapping ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-## Declare a C++ executable
+## Sim nodes
  add_executable(lab2_mapping_node 
    src/node_main.cpp
    src/ray_tracing.cpp
    src/occupancy_grid.cpp
    src/laser_scan.cpp
  )
- 
-## Specify libraries to link a library or executable target against
  target_link_libraries(lab2_mapping_node
    ${catkin_LIBRARIES}
  )
 
-## Declare a C++ executable
+ add_executable(ips_reader_node
+   src/ips_reader_main.cpp
+ )
+ target_link_libraries(ips_reader_node
+   ${catkin_LIBRARIES}
+ )
+
+## Live Nodes
  add_executable(lab2_mapping_node_live 
    src/node_main.cpp
    src/ray_tracing.cpp
    src/occupancy_grid.cpp
    src/laser_scan.cpp
  )
-
- set_target_properties(lab2_mapping_node_live PROPERTIES COMPILE_FLAGS -DLIVE)
- 
-## Specify libraries to link a library or executable target against
  target_link_libraries(lab2_mapping_node_live
    ${catkin_LIBRARIES}
  )
+ set_target_properties(lab2_mapping_node_live PROPERTIES COMPILE_FLAGS -DLIVE)
+ 
+ add_executable(ips_reader_node_live
+   src/ips_reader_main.cpp
+ )
+ target_link_libraries(ips_reader_node_live
+   ${catkin_LIBRARIES}
+ )
+ set_target_properties(ips_reader_node_live PROPERTIES COMPILE_FLAGS -DLIVE)
 
- ## Declare a C++ executable
+ ## Tests
  add_executable(lab2_tests
    src/tests_main.cpp
    src/ray_tracing.cpp
    src/occupancy_grid.cpp
    src/laser_scan.cpp
  )
- 
-## Specify libraries to link a library or executable target against
  target_link_libraries(lab2_tests
    ${catkin_LIBRARIES}
  )
