@@ -7,8 +7,8 @@
 #include "frames.h"
 #include "ray_tracing.h"
 
-static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.6); //occupancy of a cell where the beam hit a feature
-static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.4); //occupancy of a cell where where the beam passed through and hit a feature behind
+static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.51); //occupancy of a cell where the beam hit a feature
+static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.49); //occupancy of a cell where where the beam passed through and hit a feature behind
 
 void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data)
 {
