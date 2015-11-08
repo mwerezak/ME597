@@ -27,22 +27,25 @@ class OccupancyGrid
 		int _wlen, _hlen;
 		std::vector<logit_val> _grid_store;
 		
-		tf::Transform _origin;
+		tf::Transform _origin, _center;
 		tfScalar _grid_scale;
 	
 	public:
-		OccupancyGrid(double w, double h, double cell_size, double x, double y);
-		OccupancyGrid(double w, double h, double cell_size, const tf::Vector3& origin);
+		OccupancyGrid(double w, double h, double cell_size, double center_x, double center_y);
+		OccupancyGrid(double w, double h, double cell_size, const tf::Vector3& center_loc);
 		int getWidth() const;
 		int getHeight() const;
 		tfScalar getScale() const; //The real-world width and height of each grid cell
 		const tf::Transform& getOrigin() const;
 		
+		//Returns the transform from the map origin to the map center
+		const tf::Transform& getCenter() const;
+		
 		tf::Vector3 toGridFrame(const tf::Vector3& vect) const;
 		
 		logit_val readValue(int i, int j) const;
 		logit_val& valueAt(int i, int j);
-	
+		
 		void writeToMsg(nav_msgs::OccupancyGrid& msg) const;
 };
 

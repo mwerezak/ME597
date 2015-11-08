@@ -4,6 +4,8 @@
 #include <ros/ros.h>
 #include <tf/transform_datatypes.h>
 
+#include "frames.h"
+
 logit_val logit(prob_val p)
 {
 	return log(p/(1-p));
@@ -14,30 +16,44 @@ prob_val probability(logit_val logit)
 	return exp(logit)/(1+exp(logit));
 }
 
-OccupancyGrid::OccupancyGrid(double w, double h, double cell_size, double x, double y):
+OccupancyGrid::OccupancyGrid(double w, double h, double cell_size, double center_x, double center_y):
 	_wlen(ceil(w/cell_size)), 
 	_hlen(ceil(h/cell_size)), 
 	_grid_scale(cell_size), 
 	_grid_store(_wlen*_hlen, 0.0)
 {
-	_origin.setOrigin(tf::Vector3(x - (w/2.0), y - (h/2.0), 0.0));
-	_origin.setRotation(tf::createQuaternionFromYaw(0.0));
+	tf::Vector3 center_loc(center_x, center_y, 0.0);
+	tf::Quaternion orientation = tf::createQuaternionFromYaw(0.0);
+	
+	//Map origin is at the lower left corner of map
+	_center.setOrigin(tf::Vector3(w/2.0, h/2.0, 0.0));
+	_center.setRotation(tf::createQuaternionFromYaw(0.0));
+	
+	_origin.setOrigin(_center.inverse()(center_loc));
+	_origin.setRotation(orientation);
 }
 
-OccupancyGrid::OccupancyGrid(double w, double h, double cell_size, const tf::Vector3& origin_loc):
+OccupancyGrid::OccupancyGrid(double w, double h, double cell_size, const tf::Vector3& center_loc):
 	_wlen(ceil(w/cell_size)), 
 	_hlen(ceil(h/cell_size)), 
 	_grid_scale(cell_size), 
 	_grid_store(_wlen*_hlen, 0.0)
 {
-	_origin.setOrigin(tf::Vector3(origin_loc.getX() - (w/2.0), origin_loc.getY() - (h/2.0), 0.0));
-	_origin.setRotation(tf::createQuaternionFromYaw(0.0));
+	tf::Quaternion orientation = tf::createQuaternionFromYaw(0.0);
+	
+	//Map origin is at the lower left corner of map
+	_center.setOrigin(tf::Vector3(w/2.0, h/2.0, 0.0));
+	_center.setRotation(tf::createQuaternionFromYaw(0.0));
+	
+	_origin.setOrigin(_center.inverse()(center_loc));
+	_origin.setRotation(orientation);
 }
 
 int OccupancyGrid::getWidth() const { return _wlen; }
 int OccupancyGrid::getHeight() const { return _hlen; }
 tfScalar OccupancyGrid::getScale() const { return _grid_scale; }
 const tf::Transform& OccupancyGrid::getOrigin() const { return _origin; }
+const tf::Transform& OccupancyGrid::getCenter() const { return _center; }
 
 tf::Vector3 OccupancyGrid::toGridFrame(const tf::Vector3& vect) const
 {
@@ -87,13 +103,18 @@ std::ostream& operator<<(std::ostream& strm, const OccupancyGrid& grid)
 void OccupancyGrid::writeToMsg(nav_msgs::OccupancyGrid& msg) const
 {
 	msg.header.stamp = ros::Time::now();
-	msg.header.frame_id = "map";
+	msg.header.frame_id = MAP_FRAME;
 	
 	msg.info.map_load_time = ros::Time::now();
 	msg.info.resolution = _grid_scale;
 	msg.info.width = getWidth();
 	msg.info.height = getHeight();
-	tf::poseTFToMsg(_origin, msg.info.origin);
+	
+	//the location of the LL corner wrt _origin
+	msg.info.origin.position.x = 0;
+	msg.info.origin.position.y = 0;
+	msg.info.origin.position.z = 0;
+	msg.info.origin.orientation = tf::createQuaternionMsgFromYaw(0.0);
 	
 	msg.data.resize(_grid_store.size());
 	for(int i = 0; i < _grid_store.size(); i++)
