@@ -35,7 +35,8 @@ class OccupancyGrid
 		OccupancyGrid(double w, double h, double cell_size, const tf::Vector3& origin);
 		int getWidth() const;
 		int getHeight() const;
-		tfScalar getScale() const; //The real-world width and height of each grid cell	
+		tfScalar getScale() const; //The real-world width and height of each grid cell
+		const tf::Transform& getOrigin() const;
 		
 		tf::Vector3 toGridFrame(const tf::Vector3& vect) const;
 		
