@@ -9,7 +9,6 @@
 
 static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.6); //occupancy of a cell where the beam hit a feature
 static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.4); //occupancy of a cell where where the beam passed through and hit a feature behind
-static const logit_val OCCUPANCY_NOTHING = logit(0.1); //occupancy of a cell where where the beam hit nothing at all TODO remove this
 
 void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data)
 {
@@ -119,11 +118,4 @@ void MapUpdateBeamHit(OccupancyGrid& occ_map, const tf::Vector3& beam_start, con
 {
 	GridRayTrace trace(beam_start, hit_feature, occ_map);
 	_mapUpdateTrace(occ_map, trace, OCCUPANCY_HIT_AHEAD, OCCUPANCY_HIT_FEATURE);
-}
-
-//Updates the map given a beam that hit nothing
-void MapUpdateBeamMiss(OccupancyGrid& occ_map, const tf::Vector3& beam_start, const tf::Vector3& beam_end)
-{
-	GridRayTrace trace(beam_start, beam_end, occ_map);
-	_mapUpdateTrace(occ_map, trace, OCCUPANCY_NOTHING, OCCUPANCY_NOTHING);
 }
