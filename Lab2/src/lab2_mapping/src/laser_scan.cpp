@@ -36,10 +36,14 @@ void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& sca
 		static tf::TransformListener tf_listener;
 		
 		//Block until a position is available at the time of the scan
-		tf_listener.waitForTransform(WORLD_FRAME, ROBOT_FRAME, scan_end_time, ros::Duration(1.0));
+		ROS_WARN("Waiting for position update");
+		ros::Time t1 = ros::Time::now();
+		tf_listener.waitForTransform(WORLD_FRAME, ROBOT_FRAME, scan_end_time + TIME_SHIFT, ros::Duration(1.0));
+		ros::Time t2 = ros::Time::now();
+		ROS_WARN("Waited %f s!", (t2-t1).toSec());
 		
-		tf_listener.lookupTransform(WORLD_FRAME, ROBOT_FRAME, scan_start_time, robot_start_pos);
-		tf_listener.lookupTransform(WORLD_FRAME, ROBOT_FRAME, scan_end_time, robot_end_pos);
+		tf_listener.lookupTransform(WORLD_FRAME, ROBOT_FRAME, scan_start_time + TIME_SHIFT, robot_start_pos);
+		tf_listener.lookupTransform(WORLD_FRAME, ROBOT_FRAME, scan_end_time + TIME_SHIFT, robot_end_pos);
 	}
 	catch(tf::TransformException &ex)
 	{

@@ -20,14 +20,24 @@
 #include "occupancy_grid.h"
 #include "laser_scan.h"
 
+const double KINECT_MAX_RANGE = 3.8;
+
 ros::Publisher map_publisher;
 
 OccupancyGrid occupancy_map(15.0, 15.0, 0.05, tf::Vector3(0.0, 0.0, 0.0));
 
 void scan_callback(const sensor_msgs::LaserScan& msg)
 {
+	#ifdef LIVE
+	sensor_msgs::LaserScan scan_copy = msg;
+	scan_copy.range_max = KINECT_MAX_RANGE; //kinect is a liar
+	scan_copy.range_min = 0.5;
+	UpdateMapFromScan(occupancy_map, scan_copy);
+	#else
 	UpdateMapFromScan(occupancy_map, msg);
+	#endif
 	
+	//Publish the updated map
 	nav_msgs::OccupancyGrid map_msg;
 	occupancy_map.writeToMsg(map_msg);
 	map_publisher.publish(map_msg);
