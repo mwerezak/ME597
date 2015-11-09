@@ -5,7 +5,7 @@
 
 #include "frames.h"
 
-const double IPS_SCALE_CORRECTION = 1.0;
+const double IPS_SCALE_CORRECTION = 2.17;
 
 ros::Publisher pose_publisher;
 
@@ -26,7 +26,7 @@ void ips_callback(const geometry_msgs::PoseWithCovarianceStamped& msg)
 	
 	//scale correction
 	tf::Vector3 ips_pos = ips_tf.getOrigin();
-	ips_pos *= IPS_SCALE_CORRECTION;
+	ips_pos /= IPS_SCALE_CORRECTION;
 	ips_tf.setOrigin(ips_pos);
 	
 	getTfBroadcaster().sendTransform
