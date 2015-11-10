@@ -26,8 +26,15 @@ void ips_callback(const geometry_msgs::PoseWithCovarianceStamped& msg)
 	
 	//scale correction
 	tf::Vector3 ips_pos = ips_tf.getOrigin();
-	ips_pos /= IPS_SCALE_CORRECTION;
+	ips_pos *= IPS_SCALE_CORRECTION;
+	ips_pos.setZ(0.0);
+	ips_pos.setY(-ips_pos.getY());
 	ips_tf.setOrigin(ips_pos);
+	
+	//angle correction
+	double yaw = tf::getYaw(ips_tf.getRotation());
+	ips_tf.setRotation(tf::createQuaternionFromYaw(-yaw));
+	
 	
 	getTfBroadcaster().sendTransform
 		(
@@ -42,9 +49,11 @@ void ips_callback(const geometry_msgs::PoseWithCovarianceStamped& msg)
 	rviz_pose.header.seq++; //somehow this works. Frigging magic.
 	rviz_pose.header.stamp = ros::Time::now() + TIME_SHIFT;
 	rviz_pose.header.frame_id = WORLD_FRAME;
-	rviz_pose.pose = msg.pose.pose;
+	tf::poseTFToMsg(ips_tf, rviz_pose.pose);
 	pose_publisher.publish(rviz_pose);
 }
+
+
 #else
 
 #include <gazebo_msgs/ModelStates.h>
@@ -93,7 +102,7 @@ int main(int argc, char **argv)
 	#endif
 	
 	//Publish pose for Rviz
-	pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose", 1, true);
+	pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/pose_rviz", 1, true);
 
 	ros::spin(); //spin forever - tf updates are processed in the subscriber callbacks.
 
