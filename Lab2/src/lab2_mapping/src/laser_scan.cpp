@@ -8,12 +8,9 @@
 #include "frames.h"
 #include "ray_tracing.h"
 
-#define USE_INTERP
-
 static const logit_val OCCUPANCY_HIT_FEATURE = logit(0.51); //occupancy of a cell where the beam hit a feature
 static const logit_val OCCUPANCY_HIT_AHEAD = logit(0.49); //occupancy of a cell where where the beam passed through and hit a feature behind
 
-#ifdef USE_INTERP
 inline tf::Transform interpolateTF(tf::Transform start, tf::Transform end, double ratio)
 {
 	tf::Vector3 lerp_pos = start.getOrigin().lerp(end.getOrigin(), ratio);
@@ -65,31 +62,6 @@ void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& sca
 		}
 	}
 }
-
-#else
-void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data)
-{
-	tf::StampedTransform robot_pos; //locate the robot
-	ros::Time scan_time = scan_data.header.stamp;
-	
-	try
-	{
-		static tf::TransformListener tf_listener;
-		
-		//Block until a position is available at the time of the scan
-		tf_listener.waitForTransform(WORLD_FRAME, ROBOT_FRAME, scan_time, ros::Duration(1.0));
-		
-		tf_listener.lookupTransform(WORLD_FRAME, ROBOT_FRAME, scan_time, robot_pos);
-	}
-	catch(tf::TransformException &ex)
-	{
-		ROS_ERROR("%s", ex.what());
-		return;
-	}
-	
-	_mappingUpdate(occ_map, scan_data, robot_pos);
-}
-#endif
 
 void _mappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data, const tf::Transform& robot_pos)
 {
