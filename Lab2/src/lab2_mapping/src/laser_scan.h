@@ -12,8 +12,6 @@ const std::string IPS_FRAME = "ips"; //Frame ID for the robot position provided 
 //Updates the given occupancy map with the new information provided by the given laser scan.
 void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data);
 
-void _mappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data, const tf::Transform& robot_pos);
-
 bool _checkValidBeam(int beam_idx, const sensor_msgs::LaserScan& scan_data);
 tf::Vector3 _getBeamHitPos(double beam_range, double angle);
 

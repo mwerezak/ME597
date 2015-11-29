@@ -63,40 +63,6 @@ void UpdateMapFromScan(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& sca
 	}
 }
 
-void _mappingUpdate(OccupancyGrid& occ_map, const sensor_msgs::LaserScan& scan_data, const tf::Transform& robot_pos)
-{
-	//iterate over each beam
-	double angle = scan_data.angle_min;
-	for(int beam_idx = 0; beam_idx < scan_data.ranges.size(); beam_idx++)
-	{
-		double beam_range = scan_data.ranges[beam_idx];
-		
-		if(_checkValidBeam(beam_idx, scan_data))
-		{
-			tf::Vector3 beam_start = tf::Vector3(0.0, 0.0, 0.0);
-			tf::Vector3 beam_end = _getBeamHitPos(beam_range, angle);
-			
-			/*
-			ROS_WARN("angle: %fdeg\nbeam_start: (%f, %f)\nbeam_end: (%f, %f)", 
-						angles::to_degrees(angle), 
-						beam_start.getX(), beam_start.getY(),
-						beam_end.getX(), beam_end.getY()
-					);
-			
-			ROS_WARN("robot_pos: (%f, %f, %fdeg)",
-						robot_pos.getOrigin().getX(),
-						robot_pos.getOrigin().getY(),
-						angles::to_degrees(tf::getYaw(robot_pos.getRotation()))
-					);
-			*/
-			
-			_mapUpdateBeamHit(occ_map, robot_pos(beam_start), robot_pos(beam_end));
-		}
-		
-		angle += scan_data.angle_increment;
-	}
-}
-
 bool _checkValidBeam(int beam_idx, const sensor_msgs::LaserScan& scan_data)
 {
 	double beam_range = scan_data.ranges[beam_idx];
