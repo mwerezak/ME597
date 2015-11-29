@@ -34,6 +34,7 @@ geometry_msgs::Twist simple_drive_control()
 	
 	ROS_INFO("Bearing is: %fdeg, Range is: %f", angles::to_degrees(bearing), range);
 	
+	//TODO: scale PRE_TURN based on goal distance
 	geometry_msgs::Twist cmd;
 	if(range > STOP_TOL && fabs(bearing) < PRE_TURN)
 	{ cmd.linear.x = DRIVE_SPEED; }

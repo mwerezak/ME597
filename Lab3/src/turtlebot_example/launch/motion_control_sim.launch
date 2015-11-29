@@ -1,8 +1,14 @@
 <launch>
 	<node pkg="turtlebot_example" type="carrot_follower_sim" name="carrot_follower" output="screen">
-		<remap from="/carrot" to="/move_base_simple/goal"/>
+		<remap from="/carrot" to="/carrot_pose"/>
 		<remap from="/robot_pos" to="/robot_pose_ekf"/>
 		<remap from="/debug_pose" to="/debug/robot_pose"/>
+	</node>
+	
+	<node pkg="turtlebot_example" type="carrot_generator_sim" name="carrot_generator" output="screen">
+		<remap from="/path" to="/move_base_simple/goal"/>
+		<remap from="/pose" to="/robot_pose_ekf"/>
+		<remap from="/carrot_pose" to="/carrot_pose"/>
 	</node>
 	
 	<node pkg="turtlebot_example" type="ips_converter" name="ips_converter" output="screen">
