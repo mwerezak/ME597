@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   visualization_msgs
+  angles
 )
 
 ## System dependencies are found with CMake's conventions
@@ -112,6 +113,12 @@ include_directories(
 add_executable(turtlebot_example src/turtlebot_example.cpp)
 add_executable(sim_pose_publisher_node src/sim_pose_publisher.cpp)
 add_executable(vis_pose_publisher_node src/vis_pose_publisher.cpp)
+add_executable(carrot_follower_sim src/carrot_follower/carrot_follower_main.cpp)
+add_executable(carrot_follower_live src/carrot_follower/carrot_follower_main.cpp)
+add_executable(ips_converter src/carrot_follower/ips_converter_main.cpp)
+
+## Set compile flags
+set_target_properties(carrot_follower_sim PROPERTIES COMPILE_FLAGS -DSIMULATION)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -125,6 +132,15 @@ add_executable(vis_pose_publisher_node src/vis_pose_publisher.cpp)
    ${catkin_LIBRARIES}
  )
  target_link_libraries(turtlebot_example
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(carrot_follower_sim
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(carrot_follower_live
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(ips_converter
    ${catkin_LIBRARIES}
  )
 
