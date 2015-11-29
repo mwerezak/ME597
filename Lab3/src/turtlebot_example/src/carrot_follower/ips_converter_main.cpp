@@ -7,6 +7,8 @@
 #include <nav_msgs/Odometry.h>
 
 ros::Publisher vo_publisher;
+tf::Transform ips_origin_offset;
+bool init = false;
 
 #ifdef SIMULATION
 void ConvertIPS(const gazebo_msgs::ModelStates& msg)
@@ -16,9 +18,21 @@ void ConvertIPS(const gazebo_msgs::ModelStates& msg)
 	{
 		if(msg.name[i] == "mobile_base")
 		{
-			geometry_msgs::PoseWithCovariance gazebo_pose;
-			gazebo_pose.pose.pose = msg.pose[i];
+			tf::Transform ips_tf;
+			tf::poseMsgToTF(msg.pose[i], ips_tf);
+			if(!init)
+			{
+				ips_origin_offset = ips_tf;
+				ips_tf.setIdentity();
+				init = true;
+			}
+			else
+			{
+				ips_tf *= ips_origin_offset.inverse();
+			}
 			
+			geometry_msgs::PoseWithCovariance gazebo_pose;
+			tf::poseTFToMsg(ips_tf, gazebo_pose.pose.pose);
 			for(int i = 0; i < 6; i++)
 			{
 				for(int j = 0; j < 6; j++)
@@ -44,9 +58,28 @@ void ConvertIPS(const gazebo_msgs::ModelStates& msg)
 #else
 void ConvertIPS(const geometry_msgs::PoseWithCovarianceStamped& ips_msg)
 {
+	//TODO compensate for IPS weirdness
+	
+	tf::Transform ips_tf;
+	tf::poseMsgToTF(ips_msg.pose.pose, ips_tf);
+	
+	if(!init)
+	{
+		ips_origin_offset = ips_tf;
+		ips_tf.setIdentity();
+		init = true;
+	}
+	else
+	{
+		ips_tf *= ips_origin_offset.inverse();
+	}
+	
 	nav_msgs::Odometry vis_odom;
 	vis_odom.header = ips_msg.header;
-	vis_odom.pose = ips_msg.pose;
+	
+	tf::poseTFToMsg(ips_tf, vis_odom.pose.pose);
+	vis_odom.pose.covariance = ips_msg.pose.covariance;
+	
 	for(int i = 0; i < 6; i++)
 	{
 		vis_odom.twist.covariance[6*i+i] = 40000;

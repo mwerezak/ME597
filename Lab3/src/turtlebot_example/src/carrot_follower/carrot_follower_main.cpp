@@ -41,7 +41,7 @@ geometry_msgs::Twist simple_drive_control()
 	else
 	{ cmd.linear.x = 0.0; }
 	
-	if(fabs(bearing) > TURN_TOL)
+	if(range > STOP_TOL && fabs(bearing) > TURN_TOL)
 	{ cmd.angular.z = TURN_SPEED*(bearing > 0.0? 1.0 : -1.0); }
 	else
 	{ cmd.angular.z = 0.0; }
