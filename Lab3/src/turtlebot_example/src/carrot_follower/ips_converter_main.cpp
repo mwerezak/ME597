@@ -9,7 +9,7 @@
 ros::Publisher vo_publisher;
 
 #ifdef SIMULATION
-void ConvertGazeboMsg(const gazebo_msgs::ModelStates& msg)
+void ConvertIPS(const gazebo_msgs::ModelStates& msg)
 {
 	//search the ModelStates struct for the pose.
 	for(int i = 0; i < msg.name.size(); i++) 
@@ -41,9 +41,7 @@ void ConvertGazeboMsg(const gazebo_msgs::ModelStates& msg)
 		}
 	}
 }
-
 #else
-
 void ConvertIPS(const geometry_msgs::PoseWithCovarianceStamped& ips_msg)
 {
 	nav_msgs::Odometry vis_odom;
@@ -56,8 +54,8 @@ void ConvertIPS(const geometry_msgs::PoseWithCovarianceStamped& ips_msg)
 	
 	vo_publisher.publish(vis_odom);
 }
-
 #endif
+
 int main(int argc, char **argv)
 {
 	//Initialize the ROS framework
