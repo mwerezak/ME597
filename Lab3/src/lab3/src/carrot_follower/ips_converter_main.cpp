@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
 #include <angles/angles.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Odometry.h>
@@ -18,21 +19,25 @@ void ConvertIPS(const gazebo_msgs::ModelStates& msg)
 	{
 		if(msg.name[i] == "mobile_base")
 		{
-			tf::Transform ips_tf;
-			tf::poseMsgToTF(msg.pose[i], ips_tf);
-			if(!init)
+			static tf::TransformListener tf_listener;
+			tf::StampedTransform odom_tf;
+			try
 			{
-				ips_origin_offset = ips_tf;
-				ips_tf.setIdentity();
-				init = true;
+				tf_listener.lookupTransform("world", "odom", ros::Time(0), odom_tf);
 			}
-			else
+			catch (tf::TransformException ex)
 			{
-				ips_tf *= ips_origin_offset.inverse();
+				ROS_ERROR("%s",ex.what());
+				continue;
 			}
 			
+			tf::Stamped<tf::Transform> ips_pose;
+			tf::poseMsgToTF(msg.pose[i], ips_pose);
+			
+			ips_pose *= odom_tf;
+			
 			geometry_msgs::PoseWithCovariance gazebo_pose;
-			tf::poseTFToMsg(ips_tf, gazebo_pose.pose.pose);
+			tf::poseTFToMsg(ips_pose, gazebo_pose.pose.pose);
 			for(int i = 0; i < 6; i++)
 			{
 				for(int j = 0; j < 6; j++)

@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
 #include <angles/angles.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -78,9 +79,9 @@ geometry_msgs::PoseStamped get_next_carrot()
 	new_carrot.header.stamp = ros::Time::now();
 	new_carrot.header.frame_id = "odom";
 	
-	if(goal_idx == 0)
+	if(goal_idx == 0 || goal_idx == current_path.poses.size() - 1)
 	{
-		new_carrot.pose = generate_carrot_initial(current_path.poses[0].pose);
+		new_carrot.pose = generate_carrot_initial(current_path.poses[goal_idx].pose);
 	}
 	else
 	{
@@ -115,7 +116,28 @@ void update_pose(const geometry_msgs::PoseWithCovarianceStamped& msg)
 #ifdef SIMULATION
 void set_new_path(const geometry_msgs::PoseStamped& new_path_pose)
 {
-	current_path.poses.push_back(new_path_pose);
+	static tf::TransformListener tf_listener;
+	tf::StampedTransform odom_tf;
+	try
+	{
+		//ros::Time tf_time(new_path_pose.header.stamp.sec, new_path_pose.header.stamp.nsec);
+		tf_listener.lookupTransform(new_path_pose.header.frame_id, "odom", new_path_pose.header.stamp, odom_tf);
+	}
+	catch (tf::TransformException ex)
+	{
+		ROS_ERROR("%s",ex.what());
+		return;
+	}
+
+	tf::Stamped<tf::Transform> path_pose;
+	tf::poseStampedMsgToTF(new_path_pose, path_pose);
+
+	path_pose *= odom_tf;
+
+	geometry_msgs::PoseStamped path_pose_msg;
+	tf::poseStampedTFToMsg(path_pose, path_pose_msg);
+
+	current_path.poses.push_back(path_pose_msg);
 	init = true;
 }
 #else
