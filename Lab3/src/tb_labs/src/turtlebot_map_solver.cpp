@@ -22,12 +22,12 @@
 #include <random>
 #include <tf/transform_broadcaster.h>
 
-#define SIMULATION //comment out when running on turtlebot
+//#define SIMULATION //comment out when running on turtlebot
 
 //Constants
 static const unsigned nM = 200; //Number of milestones
 static const double dt = 0.05; //20 Hz
-static const double cell_size = 0.1;
+static double cell_size = 0.1;
 static const int occ_thresh = 50; //Threshold for obstical presense: all 0s and 100s anyway
 
 //Shared variables
@@ -411,6 +411,13 @@ std::vector <GraphNode> solve_graph(std::vector<GraphNode> nodes)
 
     if (end.edges.size() == 0 || start.edges.size() == 0)
     {
+       // ROS_DEBUG("Start or end point has no edges!");
+        ROS_DEBUG("Start node has %lu edges", start.edges.size());
+        ROS_DEBUG("End node has %lu edges", end.edges.size());
+        
+        ROS_DEBUG("Start at (%d, %d), map value: %f", start.x, start.y, map.valAt(start.x, start.y));
+        ROS_DEBUG("End at (%d, %d), map value: %f", end.x, end.y, map.valAt(end.x, end.y));;
+        
         return spath; //No way to reach end point
     }
 
@@ -700,6 +707,7 @@ void map_callback(const nav_msgs::OccupancyGrid& msg)
     map.width = msg.info.width;
     map.orig_x = msg.info.origin.position.x;
     map.orig_y = msg.info.origin.position.y;
+    cell_size = msg.info.resolution;
 
     map.map_data = msg.data;
     test_occ_grid(map);

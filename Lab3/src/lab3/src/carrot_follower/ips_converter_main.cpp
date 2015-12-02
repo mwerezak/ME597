@@ -14,6 +14,8 @@ const double IPS_SCALE_CORRECTION = 2.17;
 
 ros::Publisher vo_publisher;
 
+tf::Transform last_ips, last_odom_offset;
+
 tf::Transform init_pose;
 bool init = false;
 
@@ -72,17 +74,25 @@ void ConvertIPS(const geometry_msgs::PoseWithCovarianceStamped& ips_msg)
 	tf::Vector3 ips_pos = ips_tf.getOrigin();
 	ips_pos *= IPS_SCALE_CORRECTION;
 	ips_pos.setZ(0.0);
-	ips_pos.setY(-ips_pos.getY());
+	ips_pos.setX(-ips_pos.getX());
 
 	nav_msgs::Odometry vis_odom;
 	vis_odom.header.seq++;
-	vis_odom.header.stamp = ros::Time::now();
-	vis_odom.header.frame_id = "/world";
+	vis_odom.header.stamp = ros::Time(0);
+	vis_odom.header.frame_id = "world";
 	tf::pointTFToMsg(ips_pos, vis_odom.pose.pose.position);
 	vis_odom.pose.covariance = ips_msg.pose.covariance;
 	for(int i = 0; i < 6; i++)
 	{
-		vis_odom.twist.covariance[6*i+i] = 40000;
+		for(int j = 0; j < 6; j++)
+		{
+			if(i == j && vis_odom.pose.covariance[6*i+j] == 0)
+			{
+				vis_odom.pose.covariance[6*i+j] = 0.025;
+				vis_odom.twist.covariance[6*i+i] = 40000;
+			}
+			vis_odom.twist.covariance[6*i+i] = 0;
+		}
 	}
 	
 	vo_publisher.publish(vis_odom);
@@ -110,7 +120,7 @@ int main(int argc, char **argv)
 		
 		if(init)
 		{
-			tf_bcaster.sendTransform(tf::StampedTransform(init_pose, ros::Time::now(), "world", "odom"));
+			tf_bcaster.sendTransform(tf::StampedTransform(init_pose, ros::Time::now() + ros::Duration(10), "world", "odom"));
 			tf_bcaster.sendTransform(tf::StampedTransform(ident, ros::Time::now(), "world", "map"));
 		}
 		

@@ -1,6 +1,8 @@
 <launch>
+	<!-- 
 	<node pkg="map_server" type="map_server" name="map_server" 
 		args="$(find tb_labs)/launch/map_live.yaml"/>
+	-->
 	
 	<node pkg="lab3" type="carrot_follower" name="carrot_follower" output="screen">
 		<remap from="/carrot" to="/carrot_pose"/>
