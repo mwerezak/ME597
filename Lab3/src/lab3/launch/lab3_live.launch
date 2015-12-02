@@ -1,5 +1,6 @@
 <launch>
-	<node pkg="map_server" type="map_server" name="map_server" args="$(find lab3)/launch/map_sim.yaml"/>
+	<node pkg="map_server" type="map_server" name="map_server" 
+		args="$(find tb_labs)/launch/map_live.yaml"/>
 	
 	<node pkg="lab3" type="carrot_follower" name="carrot_follower" output="screen">
 		<remap from="/carrot" to="/carrot_pose"/>
@@ -7,14 +8,14 @@
 		<remap from="/debug_pose" to="/debug/robot_pose"/>
 	</node>
 	
-	<node pkg="lab3" type="carrot_generator_sim" name="carrot_generator" output="screen">
+	<node pkg="lab3" type="carrot_generator_live" name="carrot_generator" output="screen">
 		<remap from="/path_debug" to="/move_base_simple/goal"/>
 		<remap from="/pose" to="/robot_pose_ekf"/>
 		<remap from="/carrot_pose" to="/carrot_pose"/>
 	</node>
 	
-	<node pkg="lab3" type="ips_converter_sim" name="ips_converter" output="screen">
-		<remap from="/indoor_pos" to="/gazebo/model_states"/>
+	<node pkg="lab3" type="ips_converter_live" name="ips_converter" output="screen">
+		<remap from="/indoor_pos" to="/indoor_pos"/>
 		<remap from="/vo" to="/ips_vo"/>
 	</node>
 	
@@ -22,12 +23,12 @@
 		<param name="output_frame" value="odom"/>
 		<param name="freq" value="30.0"/>
 		<param name="sensor_timeout" value="1.0"/>
-		<param name="odom_used" value="false"/>
+		<param name="odom_used" value="true"/>
 		<param name="imu_used" value="false"/>
 		<param name="vo_used" value="true"/>
 		<param name="debug" value="false"/>
 		<param name="self_diagnose" value="false"/>
-		<!--<remap from="/odom" to="/odom"/>-->
+		<remap from="/odom" to="/odom"/>
 		<remap from="/vo" to="/ips_vo"/>
 		<remap from="/robot_pose_ekf/odom_combined" to="/robot_pose_ekf"/>
 	</node>
