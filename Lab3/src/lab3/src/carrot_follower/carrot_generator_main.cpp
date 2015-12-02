@@ -9,6 +9,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
+#include "../common.h"
 
 #define SQR(x) pow(x, 2)
 
@@ -100,11 +101,13 @@ void update_pose(const geometry_msgs::PoseWithCovarianceStamped& msg)
 {
 	latest_pose = msg;
 	
+	//ROS_INFO("Init is: %d", init);
 	if(!init) return;
 	
 	if(check_goal_reached(msg.pose.pose))
 	{
 		goal_idx++;
+		//ROS_INFO("Reached our goal, going to the next one. New goal is: %d of %lu", goal_idx, current_path.poses.size());
 	}
 	
 	if(goal_idx < current_path.poses.size())
@@ -115,27 +118,7 @@ void update_pose(const geometry_msgs::PoseWithCovarianceStamped& msg)
 
 bool convert_to_odom(geometry_msgs::PoseStamped pose_msg)
 {
-	static tf::TransformListener tf_listener;
-	
-	tf::StampedTransform odom_tf;
-	try
-	{
-    	tf_listener.waitForTransform(pose_msg.header.frame_id, "odom", pose_msg.header.stamp, ros::Duration(3.0));
-		tf_listener.lookupTransform(pose_msg.header.frame_id, "odom", pose_msg.header.stamp, odom_tf);
-	}
-	catch (tf::TransformException ex)
-	{
-		ROS_ERROR("%s",ex.what());
-		return false;
-	}
-
-	tf::Stamped<tf::Transform> pose;
-	tf::poseStampedMsgToTF(pose_msg, pose);
-
-	pose *= odom_tf;
-
-	tf::poseStampedTFToMsg(pose, pose_msg);
-	return true;
+	return convert_pose(pose_msg, pose_msg, "/odom");
 }
 
 void add_debug_goal(const geometry_msgs::PoseStamped& pose_msg)
@@ -154,6 +137,7 @@ void set_new_path(const nav_msgs::Path& new_path)
 	current_path = new_path;
 	for(int i = 0; i < current_path.poses.size(); i++)
 	{
+		//current_path.poses[i].header.frame_id = "world";
 		if(!convert_to_odom(current_path.poses[i]))
 		{
 			init = false;

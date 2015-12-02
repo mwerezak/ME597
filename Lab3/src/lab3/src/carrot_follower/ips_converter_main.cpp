@@ -3,9 +3,12 @@
 #include <tf/tf.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <angles/angles.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <gazebo_msgs/ModelStates.h>
 #include <nav_msgs/Odometry.h>
+#include "../common.h"
 
 ros::Publisher vo_publisher;
 tf::Transform ips_origin_offset;
@@ -19,30 +22,21 @@ void ConvertIPS(const gazebo_msgs::ModelStates& msg)
 	{
 		if(msg.name[i] == "mobile_base")
 		{
-			static tf::TransformListener tf_listener;
-			tf::StampedTransform odom_tf;
-			try
-			{
-				tf_listener.lookupTransform("world", "odom", ros::Time(0), odom_tf);
-			}
-			catch (tf::TransformException ex)
-			{
-				ROS_ERROR("%s",ex.what());
-				continue;
-			}
+			geometry_msgs::PoseStamped stamped_pose;
+			stamped_pose.header.seq++;
+			stamped_pose.header.stamp = ros::Time(0);
+			stamped_pose.header.frame_id = "world";
+			stamped_pose.pose = msg.pose[i];
 			
-			tf::Stamped<tf::Transform> ips_pose;
-			tf::poseMsgToTF(msg.pose[i], ips_pose);
-			
-			ips_pose *= odom_tf;
+			if(!convert_pose(stamped_pose, stamped_pose, "/odom")) continue;
 			
 			geometry_msgs::PoseWithCovariance gazebo_pose;
-			tf::poseTFToMsg(ips_pose, gazebo_pose.pose.pose);
+			gazebo_pose.pose = stamped_pose.pose;
 			for(int i = 0; i < 6; i++)
 			{
 				for(int j = 0; j < 6; j++)
 				{
-					gazebo_pose.pose.covariance[6*i+j] = (i == j? 0.1 : 0.0);
+					gazebo_pose.covariance[6*i+j] = (i == j? 0.1 : 0.0);
 				}
 			}
 			
@@ -65,26 +59,16 @@ void ConvertIPS(const geometry_msgs::PoseWithCovarianceStamped& ips_msg)
 {
 	//TODO compensate for IPS weirdness
 	
-	tf::Transform ips_tf;
-	tf::poseMsgToTF(ips_msg.pose.pose, ips_tf);
-	
-	if(!init)
-	{
-		ips_origin_offset = ips_tf;
-		ips_tf.setIdentity();
-		init = true;
-	}
-	else
-	{
-		ips_tf *= ips_origin_offset.inverse();
-	}
-	
+	geometry_msgs::PoseStamped stamped_pose;
+	stamped_pose.header = ips_msg.header;
+	stamped_pose.pose = ips_msg.pose.pose;
+
+	if(!convert_pose(stamped_pose, stamped_pose, "/odom")) return;
+
 	nav_msgs::Odometry vis_odom;
 	vis_odom.header = ips_msg.header;
-	
-	tf::poseTFToMsg(ips_tf, vis_odom.pose.pose);
+	vis_odom.pose.pose = stamped_pose.pose;
 	vis_odom.pose.covariance = ips_msg.pose.covariance;
-	
 	for(int i = 0; i < 6; i++)
 	{
 		vis_odom.twist.covariance[6*i+i] = 40000;
@@ -103,5 +87,19 @@ int main(int argc, char **argv)
 	ros::Subscriber ips_sub = node.subscribe("/indoor_pos", 1, ConvertIPS);
 	vo_publisher = node.advertise<nav_msgs::Odometry>("/vo", 1);
 	
-	ros::spin();
+	//broadcast map->odom tf
+	tf::TransformBroadcaster tf_bcaster;
+	tf::Transform ident;
+	ident.setIdentity();
+	
+	ros::Rate loop_rate(10);
+	while(ros::ok())
+	{
+		ros::spinOnce();   //Check for new messages
+		
+		tf_bcaster.sendTransform(tf::StampedTransform(ident, ros::Time::now(), "world", "odom"));
+		tf_bcaster.sendTransform(tf::StampedTransform(ident, ros::Time::now(), "world", "map"));
+		
+		loop_rate.sleep(); //Maintain the loop rate
+	}
 }

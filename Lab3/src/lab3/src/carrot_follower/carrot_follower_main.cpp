@@ -32,7 +32,7 @@ geometry_msgs::Twist simple_drive_control()
 	double bearing = atan2(goal.getY(), goal.getX()); //if forward is +x
 	double range = goal.length();
 	
-	ROS_INFO("Bearing is: %fdeg, Range is: %f", angles::to_degrees(bearing), range);
+	//ROS_INFO("Bearing is: %fdeg, Range is: %f", angles::to_degrees(bearing), range);
 	
 	//TODO: scale PRE_TURN based on goal distance
 	geometry_msgs::Twist cmd;

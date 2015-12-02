@@ -1,20 +1,16 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(lab3)
+project(tb_labs)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  gazebo_msgs
   geometry_msgs
-  nav_msgs
   roscpp
   rospy
   sensor_msgs
   std_msgs
   tf
-  visualization_msgs
-  angles
 )
 
 ## System dependencies are found with CMake's conventions
@@ -74,7 +70,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   gazebo_msgs#   geometry_msgs#   nav_msgs#   sensor_msgs#   std_msgs#   visualization_msgs
+#   geometry_msgs#   sensor_msgs#   std_msgs
 # )
 
 ###################################
@@ -89,7 +85,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES turtlebot_example
-#  CATKIN_DEPENDS gazebo_msgs geometry_msgs nav_msgs roscpp rospy sensor_msgs std_msgs tf visualization_msgs
+#  CATKIN_DEPENDS geometry_msgs roscpp rospy sensor_msgs std_msgs tf
 #  DEPENDS system_lib
 )
 
@@ -102,6 +98,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  /usr/local/include/eigen3
 )
 
 ## Declare a cpp library
@@ -110,49 +107,26 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-#add_executable(turtlebot_example src/turtlebot_example.cpp)
-#add_executable(sim_pose_publisher_node src/sim_pose_publisher.cpp)
-#add_executable(vis_pose_publisher_node src/vis_pose_publisher.cpp)
-add_executable(carrot_follower src/carrot_follower/carrot_follower_main.cpp src/common.cpp)
-add_executable(ips_converter_sim src/carrot_follower/ips_converter_main.cpp src/common.cpp)
-add_executable(ips_converter_live src/carrot_follower/ips_converter_main.cpp src/common.cpp)
-add_executable(carrot_generator_sim src/carrot_follower/carrot_generator_main.cpp src/common.cpp)
-add_executable(carrot_generator_live src/carrot_follower/carrot_generator_main.cpp src/common.cpp)
-
-## Set compile flags
-set_target_properties(ips_converter_sim PROPERTIES COMPILE_FLAGS -DSIMULATION)
-set_target_properties(carrot_generator_sim PROPERTIES COMPILE_FLAGS -DSIMULATION)
+add_executable(turtlebot_pf src/turtlebot_pf.cpp)
+add_executable(turtlebot_map_solver src/turtlebot_map_solver.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(turtlebot_example_node turtlebot_example_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(vis_pose_publisher_node
-#   ${catkin_LIBRARIES}
-# )
-# target_link_libraries(sim_pose_publisher_node
-#   ${catkin_LIBRARIES}
-# )
-# target_link_libraries(turtlebot_example
-#   ${catkin_LIBRARIES}
-# )
- target_link_libraries(carrot_follower
-   ${catkin_LIBRARIES}
- )
- target_link_libraries(ips_converter_sim
-   ${catkin_LIBRARIES}
- )
- target_link_libraries(ips_converter_live
-   ${catkin_LIBRARIES}
- )
- target_link_libraries(carrot_generator_sim
-   ${catkin_LIBRARIES}
- )
- target_link_libraries(carrot_generator_live
+ target_link_libraries(turtlebot_pf
    ${catkin_LIBRARIES}
  )
 
+ target_link_libraries(turtlebot_map_solver
+   ${catkin_LIBRARIES}
+ )
+
+#Use C++ 11 for NormalDistribution class
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+#target_compile_features(turtlebot_example_node1 PRIVATE )
 
 #############
 ## Install ##
@@ -174,6 +148,7 @@ set_target_properties(carrot_generator_sim PROPERTIES COMPILE_FLAGS -DSIMULATION
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
+
 
 ## Mark cpp header files for installation
 # install(DIRECTORY include/${PROJECT_NAME}/
