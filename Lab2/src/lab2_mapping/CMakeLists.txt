@@ -169,16 +169,16 @@ include_directories(
  )
  set_target_properties(ips_reader_node_live PROPERTIES COMPILE_FLAGS -DLIVE)
 
- ## Tests
- add_executable(lab2_tests
-   src/tests_main.cpp
-   src/ray_tracing.cpp
-   src/occupancy_grid.cpp
-   src/laser_scan.cpp
- )
- target_link_libraries(lab2_tests
-   ${catkin_LIBRARIES}
- )
+## Tests
+# add_executable(lab2_tests
+#   src/tests_main.cpp
+#   src/ray_tracing.cpp
+#   src/occupancy_grid.cpp
+#   src/laser_scan.cpp
+# )
+# target_link_libraries(lab2_tests
+#   ${catkin_LIBRARIES}
+# )
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above

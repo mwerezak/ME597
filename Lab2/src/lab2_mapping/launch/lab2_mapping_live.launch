@@ -5,7 +5,7 @@
 	
 	<node pkg="lab2_mapping" type="ips_reader_node_live" name="ips_reader_node_live" output="screen" />
 	
-	<node pkg="lab2_mapping" type="lab2_mapping_node_live" name="lab2_mapping_node" output="screen" />
+	<node pkg="lab2_mapping" type="lab2_mapping_node_live" name="lab2_mapping_node_live" output="screen" />
 	
 
 </launch>
