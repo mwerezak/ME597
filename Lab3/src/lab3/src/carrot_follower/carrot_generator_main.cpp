@@ -113,41 +113,57 @@ void update_pose(const geometry_msgs::PoseWithCovarianceStamped& msg)
 	}
 }
 
-#ifdef SIMULATION
-void set_new_path(const geometry_msgs::PoseStamped& new_path_pose)
+bool convert_to_odom(geometry_msgs::PoseStamped pose_msg)
 {
 	static tf::TransformListener tf_listener;
+	
 	tf::StampedTransform odom_tf;
 	try
 	{
-		//ros::Time tf_time(new_path_pose.header.stamp.sec, new_path_pose.header.stamp.nsec);
-		tf_listener.lookupTransform(new_path_pose.header.frame_id, "odom", new_path_pose.header.stamp, odom_tf);
+    	tf_listener.waitForTransform(pose_msg.header.frame_id, "odom", pose_msg.header.stamp, ros::Duration(3.0));
+		tf_listener.lookupTransform(pose_msg.header.frame_id, "odom", pose_msg.header.stamp, odom_tf);
 	}
 	catch (tf::TransformException ex)
 	{
 		ROS_ERROR("%s",ex.what());
-		return;
+		return false;
 	}
 
-	tf::Stamped<tf::Transform> path_pose;
-	tf::poseStampedMsgToTF(new_path_pose, path_pose);
+	tf::Stamped<tf::Transform> pose;
+	tf::poseStampedMsgToTF(pose_msg, pose);
 
-	path_pose *= odom_tf;
+	pose *= odom_tf;
 
-	geometry_msgs::PoseStamped path_pose_msg;
-	tf::poseStampedTFToMsg(path_pose, path_pose_msg);
-
-	current_path.poses.push_back(path_pose_msg);
-	init = true;
+	tf::poseStampedTFToMsg(pose, pose_msg);
+	return true;
 }
-#else
+
+void add_debug_goal(const geometry_msgs::PoseStamped& pose_msg)
+{
+	geometry_msgs::PoseStamped new_path_pose = pose_msg;
+
+	if(convert_to_odom(new_path_pose))
+	{
+		current_path.poses.push_back(new_path_pose);
+		init = true;
+	}
+}
+
 void set_new_path(const nav_msgs::Path& new_path)
 {
 	current_path = new_path;
+	for(int i = 0; i < current_path.poses.size(); i++)
+	{
+		if(!convert_to_odom(current_path.poses[i]))
+		{
+			init = false;
+			return;
+		}
+	}
+	
 	goal_idx = 0;
 	init = true;
 }
-#endif
 
 int main(int argc, char **argv)
 {
@@ -157,6 +173,7 @@ int main(int argc, char **argv)
 	
 	ros::Subscriber pose_sub = node.subscribe("/pose", 1, update_pose);
 	ros::Subscriber path_sub = node.subscribe("/path", 1, set_new_path);
+	ros::Subscriber debug_sub = node.subscribe("/path_debug", 1, add_debug_goal);
 	
 	#ifdef SIMULATION
 	current_path.poses.clear();
