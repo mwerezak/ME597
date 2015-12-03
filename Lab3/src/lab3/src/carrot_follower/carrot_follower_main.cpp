@@ -57,12 +57,9 @@ void UpdateCarrot(const geometry_msgs::PoseStamped& new_carrot)
 	ROS_INFO("Recieved new carrot: (%f, %f, %f)", loc.x, loc.y, loc.z);
 }
 
-void UpdatePose(const geometry_msgs::PoseWithCovarianceStamped& msg)
+void UpdatePose(const geometry_msgs::PoseStamped& msg)
 {
-	latest_pose.header = msg.header;
-	latest_pose.pose = msg.pose.pose;
-
-	pose_publisher.publish(latest_pose);
+	latest_pose = msg;
 
 	if(!init)
 	{
@@ -81,7 +78,7 @@ int main(int argc, char **argv)
 	ros::Subscriber pose_sub = node.subscribe("/robot_pos", 1, UpdatePose);
 	
 	nav_publisher = node.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
-	pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/debug_pose", 1);
+	//pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/debug_pose", 1);
 	
 	ros::Rate loop_rate(20);    //20Hz update rate
 	

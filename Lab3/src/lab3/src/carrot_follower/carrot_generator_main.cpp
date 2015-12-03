@@ -19,7 +19,7 @@ const double CARROT_LEAD = 1.0;
 ros::Publisher carrot_pub;
 
 nav_msgs::Path current_path;
-geometry_msgs::PoseWithCovarianceStamped latest_pose;
+geometry_msgs::PoseStamped latest_pose;
 int goal_idx;
 bool init = false;
 
@@ -45,7 +45,7 @@ geometry_msgs::Pose generate_carrot_initial(const geometry_msgs::Pose& path_star
 {
 	geometry_msgs::Pose carrot;
 	carrot.position = path_start.position;
-	carrot.orientation = tf::createQuaternionMsgFromYaw(bearing_to(latest_pose.pose.pose.position, path_start.position));
+	carrot.orientation = tf::createQuaternionMsgFromYaw(bearing_to(latest_pose.pose.position, path_start.position));
 	return carrot;
 }
 
@@ -60,7 +60,7 @@ geometry_msgs::Pose generate_carrot_pose(const geometry_msgs::Pose& seg_start, c
 	tf::pointMsgToTF(seg_end.position, goal_loc);
 	double seg_len = goal_loc.distance(seg_base.getOrigin());
 	
-	tf::pointMsgToTF(latest_pose.pose.pose.position, robot_loc);
+	tf::pointMsgToTF(latest_pose.pose.position, robot_loc);
 	robot_loc = seg_base.inverse()(robot_loc);
 	ROS_INFO("Robot position in path segment frame:\n[x: %f, y: %f]", robot_loc.getX(), robot_loc.getY());
 	
@@ -69,7 +69,7 @@ geometry_msgs::Pose generate_carrot_pose(const geometry_msgs::Pose& seg_start, c
 	
 	geometry_msgs::Pose carrot_msg;
 	tf::pointTFToMsg(seg_base(carrot_loc), carrot_msg.position);
-	carrot_msg.orientation = tf::createQuaternionMsgFromYaw(bearing_to(latest_pose.pose.pose.position, carrot_msg.position));
+	carrot_msg.orientation = tf::createQuaternionMsgFromYaw(bearing_to(latest_pose.pose.position, carrot_msg.position));
 	return carrot_msg;
 }
 
@@ -78,7 +78,7 @@ geometry_msgs::PoseStamped get_next_carrot()
 	geometry_msgs::PoseStamped new_carrot;
 	new_carrot.header.seq++;
 	new_carrot.header.stamp = ros::Time::now();
-	new_carrot.header.frame_id = "odom";
+	new_carrot.header.frame_id = "map";
 	
 	if(goal_idx == 0 || goal_idx == current_path.poses.size() - 1)
 	{
@@ -97,14 +97,14 @@ geometry_msgs::PoseStamped get_next_carrot()
 	return new_carrot;
 }
 
-void update_pose(const geometry_msgs::PoseWithCovarianceStamped& msg)
+void update_pose(const geometry_msgs::PoseStamped& msg)
 {
 	latest_pose = msg;
 	
 	//ROS_INFO("Init is: %d", init);
 	if(!init) return;
 	
-	if(check_goal_reached(msg.pose.pose))
+	if(check_goal_reached(msg.pose))
 	{
 		goal_idx++;
 		//ROS_INFO("Reached our goal, going to the next one. New goal is: %d of %lu", goal_idx, current_path.poses.size());
@@ -116,25 +116,26 @@ void update_pose(const geometry_msgs::PoseWithCovarianceStamped& msg)
 	}
 }
 
-bool convert_to_odom(geometry_msgs::PoseStamped pose_msg)
-{
-	return convert_pose(pose_msg, pose_msg, "/odom");
-}
+//bool convert_to_odom(geometry_msgs::PoseStamped pose_msg)
+//{
+//	return convert_pose(pose_msg, pose_msg, "/map");
+//}
 
 void add_debug_goal(const geometry_msgs::PoseStamped& pose_msg)
 {
 	geometry_msgs::PoseStamped new_path_pose = pose_msg;
 
-	if(convert_to_odom(new_path_pose))
-	{
+	//if(convert_to_odom(new_path_pose))
+	//{
 		current_path.poses.push_back(new_path_pose);
 		init = true;
-	}
+	//}
 }
 
 void set_new_path(const nav_msgs::Path& new_path)
 {
 	current_path = new_path;
+	/*
 	for(int i = 0; i < current_path.poses.size(); i++)
 	{
 		//current_path.poses[i].header.frame_id = "world";
@@ -144,6 +145,7 @@ void set_new_path(const nav_msgs::Path& new_path)
 			return;
 		}
 	}
+	*/
 	
 	goal_idx = 0;
 	init = true;
