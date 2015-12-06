@@ -107,7 +107,7 @@ void update_pose(const geometry_msgs::PoseStamped& msg)
 	if(check_goal_reached(msg.pose))
 	{
 		goal_idx++;
-		//ROS_INFO("Reached our goal, going to the next one. New goal is: %d of %lu", goal_idx, current_path.poses.size());
+		ROS_INFO("Reached our goal, going to the next one. New goal is: %d of %lu", goal_idx, current_path.poses.size());
 	}
 	
 	if(goal_idx < current_path.poses.size())
