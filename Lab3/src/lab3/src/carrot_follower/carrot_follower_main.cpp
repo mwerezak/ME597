@@ -10,8 +10,9 @@
 
 geometry_msgs::Point latest_carrot;
 geometry_msgs::PoseStamped latest_pose;
-ros::Publisher nav_publisher, pose_publisher;
+ros::Publisher nav_publisher, pose_publisher, ready_pub;
 bool init = false;
+bool ready_published = false;
 
 const double STOP_TOL = 0.1;
 const double DRIVE_SPEED = 0.15;
@@ -46,6 +47,13 @@ geometry_msgs::Twist simple_drive_control()
 	else
 	{ cmd.angular.z = 0.0; }
 	
+	if(range < STOP_TOL && !ready_published)
+	{
+		ROS_INFO("Publishing ready!");
+		ready_pub.publish(geometry_msgs::Point()); //empty message
+		ready_published = true;
+	}
+	
 	return cmd;
 }
 
@@ -55,6 +63,7 @@ void UpdateCarrot(const geometry_msgs::PoseStamped& new_carrot)
 	
 	geometry_msgs::Point loc = new_carrot.pose.position;
 	ROS_INFO("Recieved new carrot: (%f, %f, %f)", loc.x, loc.y, loc.z);
+	ready_published = false;
 }
 
 void UpdatePose(const geometry_msgs::PoseStamped& msg)
@@ -79,6 +88,7 @@ int main(int argc, char **argv)
 	
 	nav_publisher = node.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
 	//pose_publisher = node.advertise<geometry_msgs::PoseStamped>("/debug_pose", 1);
+	ready_pub = node.advertise<geometry_msgs::Point>("/ready", 1);
 	
 	ros::Rate loop_rate(20);    //20Hz update rate
 	

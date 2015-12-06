@@ -31,7 +31,7 @@ bool check_goal_reached(const geometry_msgs::Pose& current_loc)
 	
 	//check 2D distance
 	double dist_sqr = SQR(current_loc.position.x - current_goal.x) + SQR(current_loc.position.y - current_goal.y);
-	ROS_INFO("Distance to goal sqr: %f", dist_sqr);
+	//ROS_INFO("Distance to goal sqr: %f", dist_sqr);
 	
 	return (dist_sqr < SQR(GOAL_TOL));
 }
@@ -62,7 +62,7 @@ geometry_msgs::Pose generate_carrot_pose(const geometry_msgs::Pose& seg_start, c
 	
 	tf::pointMsgToTF(latest_pose.pose.position, robot_loc);
 	robot_loc = seg_base.inverse()(robot_loc);
-	ROS_INFO("Robot position in path segment frame:\n[x: %f, y: %f]", robot_loc.getX(), robot_loc.getY());
+	//ROS_INFO("Robot position in path segment frame:\n[x: %f, y: %f]", robot_loc.getX(), robot_loc.getY());
 	
 	double carrot_x = (robot_loc.getX() < seg_len? robot_loc.getX() : seg_len) + CARROT_LEAD;
 	tf::Vector3 carrot_loc(carrot_x, 0.0, 0.0);
@@ -116,36 +116,17 @@ void update_pose(const geometry_msgs::PoseStamped& msg)
 	}
 }
 
-//bool convert_to_odom(geometry_msgs::PoseStamped pose_msg)
-//{
-//	return convert_pose(pose_msg, pose_msg, "/map");
-//}
-
 void add_debug_goal(const geometry_msgs::PoseStamped& pose_msg)
 {
 	geometry_msgs::PoseStamped new_path_pose = pose_msg;
 
-	//if(convert_to_odom(new_path_pose))
-	//{
-		current_path.poses.push_back(new_path_pose);
-		init = true;
-	//}
+	current_path.poses.push_back(new_path_pose);
+	init = true;
 }
 
 void set_new_path(const nav_msgs::Path& new_path)
 {
 	current_path = new_path;
-	/*
-	for(int i = 0; i < current_path.poses.size(); i++)
-	{
-		//current_path.poses[i].header.frame_id = "world";
-		if(!convert_to_odom(current_path.poses[i]))
-		{
-			init = false;
-			return;
-		}
-	}
-	*/
 	
 	goal_idx = 0;
 	init = true;
