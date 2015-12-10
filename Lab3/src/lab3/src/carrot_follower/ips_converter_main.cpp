@@ -49,6 +49,10 @@ void UpdateOdom(const nav_msgs::Odometry& odom_msg)
 	tf::poseMsgToTF(last_odom_msg.pose.pose, cur_pose);
 	
 	cur_pose *= last_odom_base.inverse();
+	
+	tf::Quaternion rot = cur_pose.getRotation();
+	cur_pose.setRotation(tf::createQuaternionFromYaw(-tf::getYaw(rot)));
+	
 	cur_pose *= last_ips;
 	
 	geometry_msgs::PoseStamped cur_pose_msg;

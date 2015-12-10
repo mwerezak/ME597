@@ -13,15 +13,16 @@
 
 #define SQR(x) pow(x, 2)
 
-const double GOAL_TOL = 0.1;
+const double GOAL_TOL = 0.2;
 const double CARROT_LEAD = 1.0;
 
-ros::Publisher carrot_pub;
+ros::Publisher carrot_pub, ready_pub;
 
 nav_msgs::Path current_path;
 geometry_msgs::PoseStamped latest_pose;
 int goal_idx;
 bool init = false;
+bool ready_published = false;
 
 bool check_goal_reached(const geometry_msgs::Pose& current_loc)
 {
@@ -114,6 +115,12 @@ void update_pose(const geometry_msgs::PoseStamped& msg)
 	{
 		carrot_pub.publish(get_next_carrot());
 	}
+	else if(!ready_published)
+	{
+		ROS_INFO("Publishing ready!");
+		ready_pub.publish(geometry_msgs::Point()); //empty message
+		ready_published = true;
+	}
 }
 
 void add_debug_goal(const geometry_msgs::PoseStamped& pose_msg)
@@ -130,17 +137,20 @@ void set_new_path(const nav_msgs::Path& new_path)
 	
 	goal_idx = 0;
 	init = true;
+	ready_published = false;
 }
 
 int main(int argc, char **argv)
 {
 	//Initialize the ROS framework
-	ros::init(argc,argv,"carrot_follower");
+	ros::init(argc,argv,"carrot_generator");
 	ros::NodeHandle node;
 	
 	ros::Subscriber pose_sub = node.subscribe("/pose", 1, update_pose);
 	ros::Subscriber path_sub = node.subscribe("/path", 1, set_new_path);
 	ros::Subscriber debug_sub = node.subscribe("/path_debug", 1, add_debug_goal);
+	
+	ready_pub = node.advertise<geometry_msgs::Point>("/ready", 1);
 	
 	#ifdef SIMULATION
 	current_path.poses.clear();
